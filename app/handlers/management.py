@@ -8,6 +8,7 @@ from aiogram.types import Message
 from app.access import is_admin
 from app.repositories.stats import get_stats
 from app.repositories.settings import set_maintenance
+from app.repositories.settings import set_caption_template
 from app.repositories.users import get_user, list_user_ids, mark_user_blocked, set_banned
 
 router = Router(name="management")
@@ -104,6 +105,28 @@ async def maintenance_command(message: Message) -> None:
     enabled = parts[1].lower() == "on"
     await set_maintenance(enabled)
     await message.answer(f"Maintenance mode {'enabled' if enabled else 'disabled'}.")
+
+
+@router.message(Command("setcaption"))
+async def set_caption_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2 or not parts[1].strip():
+        await message.answer("Usage: /setcaption <template>\nPlaceholders: {title}, {name}, {type}, {size}")
+        return
+    await set_caption_template(parts[1].strip())
+    await message.answer("Delivery caption template saved.")
+
+
+@router.message(Command("clearcaption"))
+async def clear_caption_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    await set_caption_template(None)
+    await message.answer("Delivery caption template cleared.")
 
 
 @router.message(Command("broadcast"))

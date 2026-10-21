@@ -28,3 +28,7 @@ async def count_search_files(query: str) -> int:
         {"$or": [{"normalized_title": {"$regex": pattern}},
                   {"search_terms": {"$regex": pattern}}]}
     )
+
+
+async def get_file(chat_id: int, message_id: int) -> dict[str, Any] | None:
+    return await get_database().files.find_one({"chat_id": chat_id, "message_id": message_id})

@@ -2,10 +2,12 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from app.repositories.files import count_search_files, search_files
+from app.repositories.files import count_search_files, get_file, search_files
 from app.repositories.search_sessions import create_search_session, get_search_session
 from app.repositories.discovery import record_search
 from app.services.subscription import missing_subscriptions, subscription_keyboard
+from app.services.captions import render_caption
+from app.repositories.settings import caption_template
 
 router = Router(name="search")
 PAGE_SIZE = 5
@@ -97,8 +99,12 @@ async def _deliver_file(callback: CallbackQuery, chat_id: int, message_id: int) 
                 reply_markup=subscription_keyboard(missing, f"verify:{chat_id}:{message_id}"),
             )
         return
+    file = await get_file(chat_id, message_id)
+    template = await caption_template()
+    caption = render_caption(template, file) if template and file else None
     await callback.bot.copy_message(
-        chat_id=callback.from_user.id, from_chat_id=chat_id, message_id=message_id, protect_content=True
+        chat_id=callback.from_user.id, from_chat_id=chat_id, message_id=message_id,
+        caption=caption, protect_content=True,
     )
     await callback.answer("File sent.")
 
