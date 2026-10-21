@@ -10,6 +10,7 @@ from app.repositories.files import get_file
 from app.repositories.discovery import record_file_delivery
 from app.services.deeplinks import parse_file_payload
 from app.services.subscription import missing_subscriptions, subscription_keyboard
+from app.access import is_admin
 
 router = Router(name="common")
 
@@ -58,4 +59,29 @@ async def start(message: Message) -> None:
 
 @router.message(Command("help"))
 async def help_command(message: Message) -> None:
-    await message.answer("Available commands: /start and /help")
+    text = (
+        "MultiFilterBot commands\n\n"
+        "Search & discovery:\n"
+        "/search <name> - search indexed files\n"
+        "/latest - recently indexed files\n"
+        "/popular - most downloaded files\n"
+        "/random - random file\n"
+        "/history - your recent searches\n"
+        "/clearhistory - clear your search history\n\n"
+        "Files & bookmarks:\n"
+        "/info <filename> - show file metadata\n"
+        "/saved - view saved files\n"
+        "/unsave <filename> - remove one saved file\n"
+        "/clearsaved - remove all saved files\n"
+        "/share <filename> - create a share link\n"
+        "/request <filename> - request a missing file\n"
+    )
+    if message.from_user and is_admin(message.from_user.id):
+        text += (
+            "\nAdmin:\n"
+            "/addchannel, /removechannel, /channels\n"
+            "/deletefile, /renamefile\n"
+            "/stats, /broadcast, /ban, /unban\n"
+            "/maintenance, /setcaption\n"
+        )
+    await message.answer(text)
