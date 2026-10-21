@@ -8,13 +8,16 @@ from aiogram.types import ChatJoinRequest, Message, ReactionTypeEmoji
 from app.access import is_admin
 from app.repositories.automation import (
     auto_approve_enabled,
+    add_global_reaction_ignore,
     global_reaction,
+    global_reaction_ignored, global_reaction_ignores,
     list_reactions,
     reaction_for_chat,
     remove_reaction,
     set_auto_approve,
     set_global_reaction,
     set_reaction,
+    remove_global_reaction_ignore,
 )
 
 router = Router(name="automation")
@@ -85,6 +88,51 @@ async def global_auto_react_command(message: Message) -> None:
     await message.answer(f"Global automatic reactions enabled: {', '.join(emojis)}")
 
 
+@router.message(Command("autoreactignore"))
+async def ignore_auto_react_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2:
+        await message.answer("Usage: /autoreactignore <chat_id>")
+        return
+    try:
+        chat_id = int(parts[1])
+    except ValueError:
+        await message.answer("The chat ID must be a number.")
+        return
+    await add_global_reaction_ignore(chat_id)
+    await message.answer(f"Global reactions disabled for {chat_id}.")
+
+
+@router.message(Command("removeautoreactignore"))
+async def remove_ignore_auto_react_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2:
+        await message.answer("Usage: /removeautoreactignore <chat_id>")
+        return
+    try:
+        chat_id = int(parts[1])
+    except ValueError:
+        await message.answer("The chat ID must be a number.")
+        return
+    removed = await remove_global_reaction_ignore(chat_id)
+    await message.answer("Global reaction ignore removed." if removed else "Chat was not ignored.")
+
+
+@router.message(Command("autoreactignores"))
+async def list_ignore_auto_react_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    ignores = await global_reaction_ignores()
+    await message.answer("Ignored chats:\n" + ("\n".join(map(str, ignores)) if ignores else "None"))
+
+
 @router.message(Command("removeautoreact"))
 async def remove_auto_react_command(message: Message) -> None:
     if not _admin(message):
@@ -130,7 +178,7 @@ async def approve_join_request(request: ChatJoinRequest) -> None:
 @router.channel_post()
 async def react_to_channel_post(message: Message) -> None:
     emoji = await reaction_for_chat(message.chat.id)
-    if emoji is None:
+    if emoji is None and not await global_reaction_ignored(message.chat.id):
         emojis = await global_reaction()
         emoji = random.choice(emojis) if emojis else None
     if emoji is None:
@@ -149,7 +197,7 @@ async def react_to_channel_post(message: Message) -> None:
 async def react_to_any_message(message: Message) -> None:
     """React in private chats/groups where Telegram delivers message updates."""
     emoji = await reaction_for_chat(message.chat.id)
-    if emoji is None:
+    if emoji is None and not await global_reaction_ignored(message.chat.id):
         emojis = await global_reaction()
         emoji = random.choice(emojis) if emojis else None
     if emoji is None:

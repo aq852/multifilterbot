@@ -29,6 +29,29 @@ async def global_reaction() -> list[str]:
     return list(setting.get("emojis", [])) if setting else []
 
 
+async def add_global_reaction_ignore(chat_id: int) -> None:
+    await get_database().bot_settings.update_one(
+        {"_id": "global_reaction_ignores"}, {"$addToSet": {"chat_ids": chat_id}}, upsert=True
+    )
+
+
+async def remove_global_reaction_ignore(chat_id: int) -> bool:
+    result = await get_database().bot_settings.update_one(
+        {"_id": "global_reaction_ignores"}, {"$pull": {"chat_ids": chat_id}}
+    )
+    return result.modified_count > 0
+
+
+async def global_reaction_ignored(chat_id: int) -> bool:
+    setting = await get_database().bot_settings.find_one({"_id": "global_reaction_ignores"})
+    return chat_id in (setting.get("chat_ids", []) if setting else [])
+
+
+async def global_reaction_ignores() -> list[int]:
+    setting = await get_database().bot_settings.find_one({"_id": "global_reaction_ignores"})
+    return list(setting.get("chat_ids", [])) if setting else []
+
+
 async def set_reaction(chat_id: int, emojis: list[str]) -> None:
     await get_database().reaction_rules.update_one(
         {"_id": chat_id}, {"$set": {"emojis": emojis, "emoji": emojis[0]}}, upsert=True
