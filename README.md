@@ -31,6 +31,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - User bookmarks with `/saved` and Save/Remove buttons on search results
 - Per-user recent search history with `/history` and one-tap reruns
 - Deep-link file sharing with `/share` on indexed messages
+- Download counters and `/popular` discovery list
 - Docker and Docker Compose setup
 
 ## Local setup

@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from app.repositories.discovery import latest_files, top_searches, user_search_history
+from app.repositories.discovery import latest_files, popular_files, top_searches, user_search_history
 from app.repositories.search_sessions import create_search_session
 from app.handlers.search import _results_markup
 
@@ -31,6 +31,19 @@ async def top_command(message: Message) -> None:
     lines = [f"{index}. {item['query']} — {item['count']} searches"
              for index, item in enumerate(searches, 1)]
     await message.answer("Top searches:\n" + "\n".join(lines))
+
+
+@router.message(Command("popular"))
+async def popular_command(message: Message) -> None:
+    files = await popular_files()
+    if not files:
+        await message.answer("No file downloads have been recorded yet.")
+        return
+    buttons = [[InlineKeyboardButton(
+        text=f"{index}. {(item.get('title') or item.get('name', 'untitled'))[:48]} ({item.get('downloads', 0)} downloads)",
+        callback_data=f"file:{item['chat_id']}:{item['message_id']}",
+    )] for index, item in enumerate(files, 1)]
+    await message.answer("Most popular files:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
 
 
 @router.message(Command("history"))

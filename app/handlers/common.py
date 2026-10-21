@@ -7,6 +7,7 @@ from app.repositories.premium import activate_premium
 from app.repositories.users import get_user
 from app.services.referrals import parse_referrer
 from app.repositories.files import get_file
+from app.repositories.discovery import record_file_delivery
 from app.services.deeplinks import parse_file_payload
 from app.services.subscription import missing_subscriptions, subscription_keyboard
 
@@ -52,6 +53,7 @@ async def start(message: Message) -> None:
             chat_id=message.from_user.id, from_chat_id=chat_id, message_id=message_id,
             protect_content=True,
         )
+        await record_file_delivery(chat_id, message_id)
 
 
 @router.message(Command("help"))

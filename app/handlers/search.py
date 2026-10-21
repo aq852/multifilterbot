@@ -4,7 +4,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 
 from app.repositories.files import count_search_files, get_file, search_files
 from app.repositories.search_sessions import create_search_session, get_search_session
-from app.repositories.discovery import record_search, record_user_search
+from app.repositories.discovery import record_file_delivery, record_search, record_user_search
 from app.services.search import parse_media_filter, parse_search_filters
 from app.services.subscription import missing_subscriptions, subscription_keyboard
 from app.services.captions import render_caption
@@ -115,6 +115,7 @@ async def _deliver_file(callback: CallbackQuery, chat_id: int, message_id: int) 
         chat_id=callback.from_user.id, from_chat_id=chat_id, message_id=message_id,
         caption=caption, protect_content=True,
     )
+    await record_file_delivery(chat_id, message_id)
     await callback.answer("File sent.")
 
 

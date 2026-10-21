@@ -24,7 +24,7 @@ async def search_files(query: str, limit: int = 5, skip: int = 0, media_type: st
     filters.update(metadata_filters)
     cursor = get_database().files.find(
         filters,
-        {"name": 1, "title": 1, "chat_id": 1, "message_id": 1, "media_type": 1, "size": 1},
+        {"name": 1, "title": 1, "chat_id": 1, "message_id": 1, "media_type": 1, "size": 1, "downloads": 1},
     ).sort("title", 1).skip(skip).limit(limit)
     return await cursor.to_list(length=limit)
 
