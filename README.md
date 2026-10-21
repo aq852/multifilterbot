@@ -30,6 +30,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Metadata search filters such as `quality:WEB-DL`, `resolution:1080p`, `season:S02`, and `language:Hindi`
 - User bookmarks with `/saved` and Save/Remove buttons on search results
 - Per-user recent search history with `/history` and one-tap reruns
+- Privacy control `/clearhistory` to remove your personal search history
 - Deep-link file sharing with `/share` on indexed messages
 - Download counters and `/popular` discovery list
 - Admin catalog cleanup with `/deletefile` (reply to a file, pass chat/message IDs, or search by filename)

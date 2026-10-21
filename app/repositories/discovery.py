@@ -33,6 +33,11 @@ async def user_search_history(user_id: int, limit: int = 10) -> list[dict[str, A
     ).sort("last_used_at", -1).limit(limit).to_list(length=limit)
 
 
+async def clear_user_search_history(user_id: int) -> int:
+    result = await get_database().user_searches.delete_many({"user_id": user_id})
+    return result.deleted_count
+
+
 async def top_searches(limit: int = 10) -> list[dict[str, Any]]:
     return await get_database().search_stats.find().sort("count", -1).limit(limit).to_list(length=limit)
 

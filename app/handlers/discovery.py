@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from app.repositories.discovery import latest_files, popular_files, random_file, top_searches, user_search_history
+from app.repositories.discovery import clear_user_search_history, latest_files, popular_files, random_file, top_searches, user_search_history
 from app.repositories.search_sessions import create_search_session
 from app.handlers.search import _results_markup
 
@@ -70,6 +70,14 @@ async def history_command(message: Message) -> None:
     buttons = [[InlineKeyboardButton(text=item["query"][:60], callback_data=f"history:{index}")]
                for index, item in enumerate(history)]
     await message.answer("Your recent searches:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+
+@router.message(Command("clearhistory"))
+async def clear_history_command(message: Message) -> None:
+    if message.from_user is None:
+        return
+    deleted = await clear_user_search_history(message.from_user.id)
+    await message.answer(f"Cleared {deleted} saved search entr{'y' if deleted == 1 else 'ies'}.")
 
 
 @router.callback_query(F.data.startswith("history:"))
