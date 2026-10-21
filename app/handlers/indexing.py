@@ -5,7 +5,7 @@ from aiogram.types import Message
 from app.access import is_admin
 from app.models import file_document
 from app.repositories.channels import add_channel, is_indexed_channel, list_channels, remove_channel
-from app.repositories.files import save_file
+from app.repositories.files import delete_file, save_file
 from app.repositories.subscriptions import add_required_channel, list_required_channels, remove_required_channel
 
 router = Router(name="indexing")
@@ -13,6 +13,19 @@ router = Router(name="indexing")
 
 def _admin(message: Message) -> bool:
     return message.from_user is not None and is_admin(message.from_user.id)
+
+
+def _file_target(message: Message) -> tuple[int, int] | None:
+    target = message.reply_to_message
+    if target is not None:
+        return target.chat.id, target.message_id
+    parts = (message.text or "").split()
+    if len(parts) != 3:
+        return None
+    try:
+        return int(parts[1]), int(parts[2])
+    except ValueError:
+        return None
 
 
 @router.message(Command("addchannel"))
@@ -115,6 +128,19 @@ async def force_sub_list_command(message: Message) -> None:
     await message.answer("Force-subscription channels:\n" + "\n".join(
         f"- {channel['title']} ({channel['_id']})" for channel in channels
     ))
+
+
+@router.message(Command("deletefile"))
+async def delete_file_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    target = _file_target(message)
+    if target is None:
+        await message.answer("Reply to an indexed file or use /deletefile <chat_id> <message_id>.")
+        return
+    removed = await delete_file(*target)
+    await message.answer("File removed from the catalog." if removed else "That file is not indexed.")
 
 
 async def _index_message(message: Message) -> None:

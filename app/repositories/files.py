@@ -43,3 +43,10 @@ async def count_search_files(query: str) -> int:
 
 async def get_file(chat_id: int, message_id: int) -> dict[str, Any] | None:
     return await get_database().files.find_one({"chat_id": chat_id, "message_id": message_id})
+
+
+async def delete_file(chat_id: int, message_id: int) -> bool:
+    result = await get_database().files.delete_one({"chat_id": chat_id, "message_id": message_id})
+    if result.deleted_count:
+        await get_database().saved_files.delete_many({"chat_id": chat_id, "message_id": message_id})
+    return result.deleted_count > 0
