@@ -138,7 +138,7 @@ async def broadcast_command(message: Message) -> None:
         await message.answer("Reply to the message you want to broadcast, then use /broadcast.")
         return
     user_ids = await list_user_ids()
-    sent = failed = 0
+    sent = failed = blocked = 0
     for user_id in user_ids:
         try:
             await message.bot.copy_message(
@@ -147,8 +147,15 @@ async def broadcast_command(message: Message) -> None:
                 message_id=message.reply_to_message.message_id,
             )
             sent += 1
-        except (TelegramForbiddenError, TelegramBadRequest):
+        except TelegramForbiddenError:
+            blocked += 1
             failed += 1
             await mark_user_blocked(user_id)
+        except TelegramBadRequest:
+            failed += 1
+        except Exception:
+            failed += 1
         await asyncio.sleep(0.05)
-    await message.answer(f"Broadcast complete. Sent: {sent}; failed: {failed}.")
+    await message.answer(
+        f"Broadcast complete.\nSent: {sent}\nFailed: {failed}\nBlocked users: {blocked}"
+    )
