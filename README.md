@@ -64,6 +64,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - GitHub Actions CI for tests, compilation, imports, and Docker builds
 - Premium status details, expiry warnings, and `/paymenthistory`
 - Admin user management with `/users`, `/finduser`, `/block`, and `/unblock`
+- Related-file discovery with `/related <filename>` or a replied indexed message
 
 ## Local setup
 

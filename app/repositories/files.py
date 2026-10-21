@@ -84,3 +84,17 @@ async def rename_file(chat_id: int, message_id: int, title: str) -> bool:
         }},
     )
     return result.matched_count > 0
+
+
+async def related_files(chat_id: int, message_id: int, limit: int = 10) -> list[dict[str, Any]]:
+    source = await get_database().files.find_one(
+        {"chat_id": chat_id, "message_id": message_id}, {"search_terms": 1}
+    )
+    terms = [term for term in (source or {}).get("search_terms", []) if len(term) >= 3][:5]
+    if not terms:
+        return []
+    cursor = get_database().files.find(
+        {"$nor": [{"chat_id": chat_id, "message_id": message_id}], "search_terms": {"$in": terms}},
+        {"name": 1, "title": 1, "chat_id": 1, "message_id": 1, "media_type": 1},
+    ).sort("title", 1).limit(limit)
+    return await cursor.to_list(length=limit)

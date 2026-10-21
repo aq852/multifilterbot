@@ -3,6 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.repositories.discovery import clear_user_search_history, latest_files, popular_files, random_file, top_searches, user_search_history
+from app.repositories.files import find_files_by_name, related_files
 from app.repositories.search_sessions import create_search_session
 from app.handlers.search import _results_markup
 
@@ -57,6 +58,35 @@ async def random_command(message: Message) -> None:
         InlineKeyboardButton(text="📥 Get this file", callback_data=f"file:{item['chat_id']}:{item['message_id']}"),
     ]])
     await message.answer(f"Random pick:\n{title}", reply_markup=markup)
+
+
+@router.message(Command("related"))
+async def related_command(message: Message) -> None:
+    target = message.reply_to_message
+    if target is not None:
+        chat_id, message_id = target.chat.id, target.message_id
+    else:
+        parts = (message.text or "").split(maxsplit=1)
+        if len(parts) != 2 or not parts[1].strip():
+            await message.answer("Reply to an indexed file or use /related <filename>.")
+            return
+        matches = await find_files_by_name(parts[1].strip(), limit=5)
+        if not matches:
+            await message.answer("No indexed file matched that filename.")
+            return
+        if len(matches) > 1:
+            await message.answer("Multiple files matched. Refine the filename or reply to the exact file.")
+            return
+        chat_id, message_id = matches[0]["chat_id"], matches[0]["message_id"]
+    files = await related_files(chat_id, message_id)
+    if not files:
+        await message.answer("No related files found.")
+        return
+    buttons = [[InlineKeyboardButton(
+        text=(item.get("title") or item.get("name", "untitled"))[:60],
+        callback_data=f"file:{item['chat_id']}:{item['message_id']}",
+    )] for item in files]
+    await message.answer("Related files:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
 
 
 @router.message(Command("history"))

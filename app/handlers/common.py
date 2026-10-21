@@ -66,6 +66,7 @@ async def help_command(message: Message) -> None:
         "/latest - recently indexed files\n"
         "/popular - most downloaded files\n"
         "/random - random file\n"
+        "/related <filename> - find similar files\n"
         "/history - your recent searches\n"
         "/clearhistory - clear your search history\n\n"
         "Files & bookmarks:\n"
