@@ -5,6 +5,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 from app.repositories.files import count_search_files, get_file, search_files
 from app.repositories.search_sessions import create_search_session, get_search_session
 from app.repositories.discovery import record_search
+from app.services.search import parse_media_filter
 from app.services.subscription import missing_subscriptions, subscription_keyboard
 from app.services.captions import render_caption
 from app.repositories.settings import caption_template
@@ -38,7 +39,8 @@ def _page_target(data: str) -> tuple[str, int] | None:
 
 async def _results_markup(query: str, token: str, page: int) -> tuple[str, InlineKeyboardMarkup | None]:
     total = await count_search_files(query)
-    results = await search_files(query, limit=PAGE_SIZE, skip=page * PAGE_SIZE)
+    filtered_query, media_type = parse_media_filter(query)
+    results = await search_files(filtered_query, limit=PAGE_SIZE, skip=page * PAGE_SIZE, media_type=media_type)
     if not results:
         return "No matching files found.", None
     buttons = [[InlineKeyboardButton(
@@ -52,14 +54,15 @@ async def _results_markup(query: str, token: str, page: int) -> tuple[str, Inlin
         navigation.append(InlineKeyboardButton(text="Next ➡️", callback_data=f"search:{token}:{page + 1}"))
     if navigation:
         buttons.append(navigation)
-    return f"Search results for: {query}\nPage {page + 1} of {(total + PAGE_SIZE - 1) // PAGE_SIZE}", InlineKeyboardMarkup(inline_keyboard=buttons)
+    label = f"{media_type}: {filtered_query}" if media_type else filtered_query
+    return f"Search results for: {label}\nPage {page + 1} of {(total + PAGE_SIZE - 1) // PAGE_SIZE}", InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 @router.message(Command("search"))
 async def search_command(message: Message) -> None:
     parts = (message.text or "").split(maxsplit=1)
     if len(parts) != 2 or not parts[1].strip() or message.from_user is None:
-        await message.answer("Usage: /search <movie, series, or file name>")
+        await message.answer("Usage: /search <name> or /search video:<name>")
         return
     query = parts[1].strip()
     await record_search(query)

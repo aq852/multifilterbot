@@ -1,6 +1,6 @@
 import unittest
 
-from app.services.search import build_search_terms, normalize_title, search_pattern
+from app.services.search import build_search_terms, normalize_title, parse_media_filter, search_pattern
 from app.handlers.search import _file_target
 
 
@@ -13,6 +13,10 @@ class SearchTests(unittest.TestCase):
 
     def test_search_pattern_escapes_regex_characters(self) -> None:
         self.assertEqual(search_pattern("A+B"), r"a\ b")
+
+    def test_parse_media_filter(self) -> None:
+        self.assertEqual(parse_media_filter("video: My Movie"), ("My Movie", "video"))
+        self.assertEqual(parse_media_filter("unknown:movie"), ("unknown:movie", None))
 
     def test_file_callback_target(self) -> None:
         self.assertEqual(_file_target("file:-100123:77"), (-100123, 77))

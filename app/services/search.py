@@ -1,6 +1,7 @@
 import re
 
 STOP_WORDS = {"a", "an", "and", "in", "of", "on", "the", "to"}
+MEDIA_TYPES = {"video", "document", "audio", "photo"}
 
 
 def normalize_title(value: str) -> str:
@@ -16,3 +17,10 @@ def build_search_terms(value: str) -> list[str]:
 
 def search_pattern(query: str) -> str:
     return re.escape(normalize_title(query))
+
+
+def parse_media_filter(query: str) -> tuple[str, str | None]:
+    prefix, separator, remainder = query.partition(":")
+    if separator and prefix.casefold() in MEDIA_TYPES and remainder.strip():
+        return remainder.strip(), prefix.casefold()
+    return query.strip(), None

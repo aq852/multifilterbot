@@ -24,6 +24,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - `/id` chat and user ID utility
 - Inline admin dashboard via `/settings`
 - Configurable delivery captions via `/setcaption` and `/clearcaption`
+- Media-type search filters such as `/search video:movie`
 - Docker and Docker Compose setup
 
 ## Local setup
