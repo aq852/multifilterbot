@@ -33,6 +33,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Per-user recent search history with `/history` and one-tap reruns
 - Privacy control `/clearhistory` to remove your personal search history
 - Deep-link file sharing with `/share` on indexed messages
+- Inline Share buttons on search results
 - Download counters and `/popular` discovery list
 - Admin catalog cleanup with `/deletefile` (reply to a file, pass chat/message IDs, or search by filename)
 - Admin title editing with `/renamefile <new title>` on reply, or `/renamefile <old filename> => <new title>`

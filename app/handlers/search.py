@@ -9,6 +9,7 @@ from app.services.search import parse_media_filter, parse_search_filters
 from app.services.subscription import missing_subscriptions, subscription_keyboard
 from app.services.captions import render_caption
 from app.repositories.settings import caption_template
+from app.services.deeplinks import build_file_payload
 
 router = Router(name="search")
 PAGE_SIZE = 5
@@ -50,6 +51,7 @@ async def _results_markup(query: str, token: str, page: int) -> tuple[str, Inlin
             callback_data=f"file:{item['chat_id']}:{item['message_id']}",
         ),
         InlineKeyboardButton(text="🔖 Save", callback_data=f"save:{item['chat_id']}:{item['message_id']}"),
+        InlineKeyboardButton(text="🔗 Share", callback_data=f"share:{item['chat_id']}:{item['message_id']}"),
     ] for item in results]
     navigation = []
     if page > 0:
@@ -126,3 +128,24 @@ async def file_callback(callback: CallbackQuery) -> None:
         await callback.answer("Invalid file link.", show_alert=True)
         return
     await _deliver_file(callback, *target)
+
+
+@router.callback_query(F.data.startswith("share:"))
+async def share_callback(callback: CallbackQuery) -> None:
+    parts = (callback.data or "").split(":")
+    if len(parts) != 3:
+        await callback.answer("Invalid share link.", show_alert=True)
+        return
+    try:
+        chat_id, message_id = int(parts[1]), int(parts[2])
+    except ValueError:
+        await callback.answer("Invalid share link.", show_alert=True)
+        return
+    bot_user = await callback.bot.get_me()
+    if not bot_user.username:
+        await callback.answer("Bot username is unavailable.", show_alert=True)
+        return
+    link = f"https://t.me/{bot_user.username}?start={build_file_payload(chat_id, message_id)}"
+    if callback.message:
+        await callback.message.answer(f"Share this file:\n{link}")
+    await callback.answer("Share link generated.")
