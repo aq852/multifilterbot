@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from app.database import get_database
@@ -50,3 +51,17 @@ async def delete_file(chat_id: int, message_id: int) -> bool:
     if result.deleted_count:
         await get_database().saved_files.delete_many({"chat_id": chat_id, "message_id": message_id})
     return result.deleted_count > 0
+
+
+async def find_files_by_name(query: str, limit: int = 10) -> list[dict[str, Any]]:
+    pattern = re.escape(query.strip())
+    if not pattern:
+        return []
+    cursor = get_database().files.find(
+        {"$or": [
+            {"name": {"$regex": pattern, "$options": "i"}},
+            {"title": {"$regex": pattern, "$options": "i"}},
+        ]},
+        {"name": 1, "title": 1, "chat_id": 1, "message_id": 1},
+    ).sort("title", 1).limit(limit)
+    return await cursor.to_list(length=limit)

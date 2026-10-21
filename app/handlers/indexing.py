@@ -1,11 +1,11 @@
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.access import is_admin
 from app.models import file_document
 from app.repositories.channels import add_channel, is_indexed_channel, list_channels, remove_channel
-from app.repositories.files import delete_file, save_file
+from app.repositories.files import delete_file, find_files_by_name, save_file
 from app.repositories.subscriptions import add_required_channel, list_required_channels, remove_required_channel
 
 router = Router(name="indexing")
@@ -136,11 +136,48 @@ async def delete_file_command(message: Message) -> None:
         await message.answer("You are not authorized to use this command.")
         return
     target = _file_target(message)
-    if target is None:
-        await message.answer("Reply to an indexed file or use /deletefile <chat_id> <message_id>.")
+    if target is not None:
+        removed = await delete_file(*target)
+        await message.answer("File removed from the catalog." if removed else "That file is not indexed.")
+        return
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2 or not parts[1].strip():
+        await message.answer("Reply to an indexed file, use /deletefile <chat_id> <message_id>, or pass a filename.")
+        return
+    matches = await find_files_by_name(parts[1].strip())
+    if not matches:
+        await message.answer("No indexed file matched that filename.")
+        return
+    if len(matches) == 1:
+        item = matches[0]
+        await delete_file(item["chat_id"], item["message_id"])
+        await message.answer(f"Removed: {item.get('title') or item.get('name', 'untitled')}")
+        return
+    buttons = [[InlineKeyboardButton(
+        text=(item.get("title") or item.get("name", "untitled"))[:55],
+        callback_data=f"admindelete:{item['chat_id']}:{item['message_id']}",
+    )] for item in matches]
+    await message.answer("Multiple files matched. Choose one to remove:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+
+@router.callback_query(F.data.startswith("admindelete:"))
+async def admin_delete_callback(callback: CallbackQuery) -> None:
+    if not is_admin(callback.from_user.id):
+        await callback.answer("You are not authorized.", show_alert=True)
+        return
+    parts = (callback.data or "").split(":")
+    if len(parts) != 3:
+        await callback.answer("Invalid file target.", show_alert=True)
+        return
+    try:
+        target = int(parts[1]), int(parts[2])
+    except ValueError:
+        await callback.answer("Invalid file target.", show_alert=True)
         return
     removed = await delete_file(*target)
-    await message.answer("File removed from the catalog." if removed else "That file is not indexed.")
+    await callback.answer("File removed." if removed else "File was already removed.")
+    if callback.message:
+        await callback.message.edit_text("File removed from the catalog." if removed else "File was already removed.")
 
 
 async def _index_message(message: Message) -> None:
