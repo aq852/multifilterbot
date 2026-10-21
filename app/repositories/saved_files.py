@@ -19,10 +19,10 @@ async def remove_saved_file(user_id: int, chat_id: int, message_id: int) -> bool
     return result.deleted_count > 0
 
 
-async def list_saved_files(user_id: int, limit: int = 20) -> list[dict[str, Any]]:
+async def list_saved_files(user_id: int, limit: int = 10, skip: int = 0) -> list[dict[str, Any]]:
     cursor = get_database().saved_files.find(
         {"user_id": user_id}, {"chat_id": 1, "message_id": 1}
-    ).sort("created_at", -1).limit(limit)
+    ).sort("created_at", -1).skip(skip).limit(limit)
     saved = await cursor.to_list(length=limit)
     targets = [{"chat_id": item["chat_id"], "message_id": item["message_id"]} for item in saved]
     if not targets:

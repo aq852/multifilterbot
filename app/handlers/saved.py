@@ -6,6 +6,7 @@ from app.repositories.files import find_files_by_name
 from app.repositories.saved_files import clear_saved_files, list_saved_files, remove_saved_file, save_file_for_user
 
 router = Router(name="saved")
+PAGE_SIZE = 10
 
 
 def _target(data: str, prefix: str) -> tuple[int, int] | None:
@@ -22,10 +23,16 @@ def _target(data: str, prefix: str) -> tuple[int, int] | None:
 async def saved_command(message: Message) -> None:
     if message.from_user is None:
         return
-    files = await list_saved_files(message.from_user.id)
+    await _send_saved_page(message, message.from_user.id, 0)
+
+
+async def _send_saved_page(message: Message, user_id: int, page: int) -> None:
+    files = await list_saved_files(user_id, limit=PAGE_SIZE + 1, skip=page * PAGE_SIZE)
     if not files:
         await message.answer("You have no saved files yet. Use Save on a search result.")
         return
+    has_next = len(files) > PAGE_SIZE
+    files = files[:PAGE_SIZE]
     buttons = []
     for item in files:
         title = (item.get("title") or item.get("name", "untitled"))[:55]
@@ -34,7 +41,28 @@ async def saved_command(message: Message) -> None:
             InlineKeyboardButton(text=f"📄 {title}", callback_data=f"file:{target}"),
             InlineKeyboardButton(text="✕", callback_data=f"unsave:{target}"),
         ])
-    await message.answer("Your saved files:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    navigation = []
+    if page > 0:
+        navigation.append(InlineKeyboardButton(text="⬅️ Previous", callback_data=f"saved:{page - 1}"))
+    if has_next:
+        navigation.append(InlineKeyboardButton(text="Next ➡️", callback_data=f"saved:{page + 1}"))
+    if navigation:
+        buttons.append(navigation)
+    await message.answer(f"Your saved files (page {page + 1}):", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+
+@router.callback_query(F.data.startswith("saved:"))
+async def saved_page_callback(callback: CallbackQuery) -> None:
+    try:
+        page = int((callback.data or "").split(":", 1)[1])
+    except ValueError:
+        await callback.answer("Invalid saved page.", show_alert=True)
+        return
+    if page < 0 or callback.message is None:
+        await callback.answer("Invalid saved page.", show_alert=True)
+        return
+    await _send_saved_page(callback.message, callback.from_user.id, page)
+    await callback.answer()
 
 
 @router.message(Command("unsave"))
