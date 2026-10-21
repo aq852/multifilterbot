@@ -90,5 +90,6 @@ async def help_command(message: Message) -> None:
             "/autoreactignore <chat_id>\n"
             "/welcome on/off\n"
             "/goodbye on/off\n"
+            "/setwelcome, /setgoodbye\n"
         )
     await message.answer(text)

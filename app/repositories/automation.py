@@ -32,6 +32,21 @@ async def goodbye_enabled(chat_id: int) -> bool:
     return bool(setting and setting.get("enabled"))
 
 
+async def set_member_message(chat_id: int, kind: str, template: str | None) -> None:
+    key = f"{kind}_template:{chat_id}"
+    if template:
+        await get_database().bot_settings.update_one(
+            {"_id": key}, {"$set": {"template": template}}, upsert=True
+        )
+    else:
+        await get_database().bot_settings.delete_one({"_id": key})
+
+
+async def member_message_template(chat_id: int, kind: str) -> str | None:
+    setting = await get_database().bot_settings.find_one({"_id": f"{kind}_template:{chat_id}"})
+    return setting.get("template") if setting else None
+
+
 async def auto_approve_enabled() -> bool:
     setting = await get_database().bot_settings.find_one({"_id": "auto_approve"})
     return bool(setting and setting.get("enabled"))

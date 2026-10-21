@@ -11,6 +11,7 @@ from app.repositories.automation import (
     add_global_reaction_ignore,
     global_reaction,
     global_reaction_ignored, global_reaction_ignores,
+    member_message_template,
     list_reactions,
     reaction_for_chat,
     remove_reaction,
@@ -18,6 +19,7 @@ from app.repositories.automation import (
     set_global_reaction,
     set_reaction,
     set_goodbye,
+    set_member_message,
     set_welcome,
     welcome_enabled,
     goodbye_enabled,
@@ -75,6 +77,50 @@ async def goodbye_command(message: Message) -> None:
     enabled = parts[1].lower() == "on"
     await set_goodbye(message.chat.id, enabled)
     await message.answer(f"Goodbye messages {'enabled' if enabled else 'disabled'} for this chat.")
+
+
+@router.message(Command("setwelcome"))
+async def set_welcome_message_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2 or not parts[1].strip():
+        await message.answer("Usage: /setwelcome Welcome, {name}!\nUse /clearwelcome to restore the default.")
+        return
+    await set_member_message(message.chat.id, "welcome", parts[1].strip())
+    await message.answer("Custom welcome message saved.")
+
+
+@router.message(Command("clearwelcome"))
+async def clear_welcome_message_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    await set_member_message(message.chat.id, "welcome", None)
+    await message.answer("Custom welcome message cleared.")
+
+
+@router.message(Command("setgoodbye"))
+async def set_goodbye_message_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2 or not parts[1].strip():
+        await message.answer("Usage: /setgoodbye Goodbye, {name}!\nUse /cleargoodbye to restore the default.")
+        return
+    await set_member_message(message.chat.id, "goodbye", parts[1].strip())
+    await message.answer("Custom goodbye message saved.")
+
+
+@router.message(Command("cleargoodbye"))
+async def clear_goodbye_message_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    await set_member_message(message.chat.id, "goodbye", None)
+    await message.answer("Custom goodbye message cleared.")
 
 
 @router.message(Command("autoreact"))
@@ -208,14 +254,16 @@ async def welcome_new_members(message: Message) -> None:
     if not await welcome_enabled(message.chat.id):
         return
     names = ", ".join(member.full_name for member in message.new_chat_members)
-    await message.answer(f"Welcome, {names}! Please read the group rules and enjoy your stay.")
+    template = await member_message_template(message.chat.id, "welcome")
+    await message.answer((template or "Welcome, {name}! Please read the group rules and enjoy your stay.").replace("{name}", names))
 
 
 @router.message(F.left_chat_member)
 async def goodbye_member(message: Message) -> None:
     if not await goodbye_enabled(message.chat.id) or message.left_chat_member is None:
         return
-    await message.answer(f"Goodbye, {message.left_chat_member.full_name}! Take care.")
+    template = await member_message_template(message.chat.id, "goodbye")
+    await message.answer((template or "Goodbye, {name}! Take care.").replace("{name}", message.left_chat_member.full_name))
     try:
         await request.bot.approve_chat_join_request(request.chat.id, request.from_user.id)
     except (TelegramBadRequest, TelegramForbiddenError):
