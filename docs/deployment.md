@@ -13,6 +13,15 @@ For external MongoDB or MongoDB Atlas, use `docker-compose.prod.yml`; it runs on
 
 Deploy this repository as a Docker-based service using the included `Dockerfile`. Configure port `8080`, health path `/health`, and these environment variables:
 
+Koyeb run configuration:
+
+- **Builder:** Dockerfile
+- **Run command:** leave blank to use the image command, or set `python -m app`
+- **Exposed port:** `8080`
+- **Health check path:** `/health`
+
+The Dockerfile starts the bot with `python -m app`; the health server listens on `0.0.0.0:8080`.
+
 - `BOT_TOKEN`
 - `ADMIN_IDS`
 - `MONGO_URI`

@@ -76,6 +76,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Telegram `t.me` message-link parsing for indexed `/info` and `/link` requests
 - Split-file detection and ordered grouping through `/parts`
 - Smart search ranking for exact matches, title prefixes, and popular files
+- Admin `/channelstats` for per-channel indexed files, downloads, and last-indexed time
 
 ## Local setup
 
@@ -89,3 +90,6 @@ Only index and distribute media that you are authorized to access and share. Nev
 session strings, database credentials, or other secrets.
 
 See `docs/deployment.md` for VPS and Koyeb deployment instructions.
+
+Koyeb quick settings: Dockerfile builder, port `8080`, health path `/health`, and run command
+`python -m app` (or leave it blank to use the Dockerfile default).

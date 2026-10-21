@@ -24,6 +24,7 @@ USER_COMMANDS = [
 
 ADMIN_COMMANDS = USER_COMMANDS + [
     BotCommand(command="admin", description="Open admin dashboard"),
+    BotCommand(command="channelstats", description="Channel indexing status"),
     BotCommand(command="settings", description="Open bot settings"),
     BotCommand(command="audit", description="View admin activity"),
     BotCommand(command="stats", description="View bot statistics"),

@@ -7,6 +7,7 @@ from app.models import file_document
 from app.repositories.channels import add_channel, is_indexed_channel, list_channels, remove_channel
 from app.repositories.files import delete_file, find_files_by_name, rename_file, save_file
 from app.repositories.subscriptions import add_required_channel, list_required_channels, remove_required_channel
+from app.repositories.channel_stats import channel_index_stats
 
 router = Router(name="indexing")
 
@@ -28,6 +29,23 @@ def _file_target(message: Message) -> tuple[int, int] | None:
         return None
 
 
+@router.message(Command("channelstats"))
+async def channel_stats_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    stats = await channel_index_stats()
+    if not stats:
+        await message.answer("No indexing channels configured.")
+        return
+    lines = ["Channel indexing status:"]
+    for item in stats:
+        last_indexed = item["last_indexed"].strftime("%Y-%m-%d %H:%M UTC") if item["last_indexed"] else "never"
+        lines.append(
+            f"• {item['title']} ({item['chat_id']})\n"
+            f"  Files: {item['indexed_files']} | Downloads: {item['downloads']} | Last: {last_indexed}"
+        )
+    await message.answer("\n".join(lines))
 @router.message(Command("addchannel"))
 async def add_channel_command(message: Message) -> None:
     if not _admin(message):

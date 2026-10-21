@@ -98,6 +98,7 @@ async def help_command(message: Message) -> None:
         text += (
             "\nAdmin:\n"
             "/addchannel, /removechannel, /channels\n"
+            "/channelstats - per-channel indexing status\n"
             "/deletefile, /renamefile\n"
             "/stats, /broadcast, /ban, /unban\n"
             "/users, /finduser, /block, /unblock\n"
