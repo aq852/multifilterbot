@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import re
 from uuid import uuid4
 
 from app.database import get_database
@@ -44,3 +45,9 @@ async def close_request(request_id: str, closed_by: int) -> bool:
 
 async def get_request(request_id: str) -> dict | None:
     return await get_database().file_requests.find_one({"_id": request_id})
+
+
+async def find_open_requests_by_query(query: str, limit: int = 5) -> list[dict]:
+    return await get_database().file_requests.find(
+        {"status": "open", "query": {"$regex": re.escape(query.strip()), "$options": "i"}}
+    ).sort("created_at", 1).limit(limit).to_list(length=limit)

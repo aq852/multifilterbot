@@ -4,7 +4,7 @@ from aiogram.types import Message
 
 from app.access import is_admin
 from app.config import settings
-from app.repositories.requests import cancel_user_request, close_request, create_request, get_request, open_requests, user_open_requests
+from app.repositories.requests import cancel_user_request, close_request, create_request, find_open_requests_by_query, get_request, open_requests, user_open_requests
 
 router = Router(name="requests")
 
@@ -74,12 +74,21 @@ async def close_request_command(message: Message) -> None:
         return
     parts = (message.text or "").split(maxsplit=1)
     if len(parts) != 2:
-        await message.answer("Usage: /closerequest <request_id>")
+        await message.answer("Usage: /closerequest <request_id or filename>")
         return
-    closed = await close_request(parts[1].strip(), message.from_user.id)
+    reference = parts[1].strip()
+    request = await get_request(reference)
+    if request is None:
+        matches = await find_open_requests_by_query(reference)
+        if len(matches) > 1:
+            await message.answer("Multiple requests matched. Use the request ID from /requests.")
+            return
+        if len(matches) == 1:
+            reference = matches[0]["_id"]
+    closed = await close_request(reference, message.from_user.id)
     await message.answer("Request closed." if closed else "Open request not found.")
     if closed:
-        request = await get_request(parts[1].strip())
+        request = await get_request(reference)
         if request:
             try:
                 await message.bot.send_message(
