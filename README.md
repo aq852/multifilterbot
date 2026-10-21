@@ -68,6 +68,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Related-file discovery with `/related <filename>` or a replied indexed message
 - MongoDB startup retry/backoff and graceful connection cleanup
 - Centralized update error logging with safe user-facing fallback messages
+- Admin audit log for commands and settings callbacks, available through `/audit`
 
 ## Local setup
 

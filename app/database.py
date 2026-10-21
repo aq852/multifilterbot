@@ -50,6 +50,7 @@ async def initialize_indexes() -> None:
     await db.file_requests.create_index([("status", 1), ("created_at", 1)])
     await db.saved_files.create_index([("user_id", 1), ("chat_id", 1), ("message_id", 1)], unique=True)
     await db.saved_files.create_index([("user_id", 1), ("created_at", -1)])
+    await db.audit_logs.create_index([("created_at", -1)])
 
 
 async def close_database() -> None:
