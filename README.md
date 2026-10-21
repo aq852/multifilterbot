@@ -36,6 +36,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Inline Share buttons on search results
 - Inline Info buttons for metadata without downloading
 - Categorized `/help` menu with separate user and admin commands
+- Personal request tracking with `/myrequests` and filename-based `/cancelrequest`
 - Download counters and `/popular` discovery list
 - Admin catalog cleanup with `/deletefile` (reply to a file, pass chat/message IDs, or search by filename)
 - Admin title editing with `/renamefile <new title>` on reply, or `/renamefile <old filename> => <new title>`

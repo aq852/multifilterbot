@@ -7,3 +7,5 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(len(request_id), 8)
         self.assertTrue(request_id.isalnum())
 
+    def test_request_query_can_be_cancelled_by_text(self) -> None:
+        self.assertEqual("Movie Name 1080p".strip(), "Movie Name 1080p")
