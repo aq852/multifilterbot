@@ -38,6 +38,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Inline Info buttons for metadata without downloading
 - Categorized `/help` menu with separate user and admin commands
 - Personal request tracking with `/myrequests` and filename-based `/cancelrequest`
+- Automatic admin notifications for new file requests
 - In-memory anti-spam rate limiting for users; admins are exempt
 - Live `/admin` dashboard with database, catalog, subscription, and request status
 - Broadcast reports sent, failed, and blocked-user counts

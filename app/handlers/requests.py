@@ -3,6 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from app.access import is_admin
+from app.config import settings
 from app.repositories.requests import cancel_user_request, close_request, create_request, open_requests, user_open_requests
 
 router = Router(name="requests")
@@ -18,6 +19,15 @@ async def request_command(message: Message) -> None:
         return
     request_id = await create_request(message.from_user.id, parts[1])
     await message.answer(f"Request received with ID `{request_id}`.", parse_mode="Markdown")
+    for admin_id in settings.admin_ids:
+        try:
+            await message.bot.send_message(
+                admin_id,
+                f"New file request `{request_id}` from {message.from_user.id}:\n{parts[1].strip()}",
+                parse_mode="Markdown",
+            )
+        except Exception:
+            continue
 
 
 @router.message(Command("requests"))
