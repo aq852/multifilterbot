@@ -52,6 +52,7 @@ async def _results_markup(query: str, token: str, page: int) -> tuple[str, Inlin
         ),
         InlineKeyboardButton(text="🔖 Save", callback_data=f"save:{item['chat_id']}:{item['message_id']}"),
         InlineKeyboardButton(text="🔗 Share", callback_data=f"share:{item['chat_id']}:{item['message_id']}"),
+        InlineKeyboardButton(text="ℹ️ Info", callback_data=f"fileinfo:{item['chat_id']}:{item['message_id']}"),
     ] for item in results]
     navigation = []
     if page > 0:
@@ -149,3 +150,32 @@ async def share_callback(callback: CallbackQuery) -> None:
     if callback.message:
         await callback.message.answer(f"Share this file:\n{link}")
     await callback.answer("Share link generated.")
+
+
+@router.callback_query(F.data.startswith("fileinfo:"))
+async def file_info_callback(callback: CallbackQuery) -> None:
+    parts = (callback.data or "").split(":")
+    if len(parts) != 3:
+        await callback.answer("Invalid file info request.", show_alert=True)
+        return
+    try:
+        chat_id, message_id = int(parts[1]), int(parts[2])
+    except ValueError:
+        await callback.answer("Invalid file info request.", show_alert=True)
+        return
+    file = await get_file(chat_id, message_id)
+    if file is None:
+        await callback.answer("File is no longer indexed.", show_alert=True)
+        return
+    details = [
+        f"Type: {file.get('media_type', 'unknown')}",
+        f"Title: {file.get('title') or file.get('name', 'untitled')}",
+        f"Size: {file.get('size') or 'unknown'} bytes",
+        f"Downloads: {file.get('downloads', 0)}",
+    ]
+    for field, label in (("resolution", "Resolution"), ("season", "Season"), ("quality", "Quality"), ("language", "Language")):
+        if file.get(field):
+            details.append(f"{label}: {file[field]}")
+    if callback.message:
+        await callback.message.answer("\n".join(details))
+    await callback.answer()
