@@ -26,11 +26,32 @@ async def search_files(query: str, limit: int = 5, skip: int = 0, media_type: st
     if media_type:
         filters["media_type"] = media_type
     filters.update(metadata_filters)
-    cursor = get_database().files.find(
-        filters,
-        {"name": 1, "title": 1, "chat_id": 1, "message_id": 1, "media_type": 1, "size": 1, "downloads": 1},
-    ).sort("title", 1).skip(skip).limit(limit)
-    return await cursor.to_list(length=limit)
+    normalized_query = normalize_title(query)
+    pipeline = [
+        {"$match": filters},
+        {"$addFields": {
+            "_match_rank": {
+                "$cond": [
+                    {"$eq": ["$normalized_title", normalized_query]},
+                    0,
+                    {"$cond": [
+                        {"$regexMatch": {"input": {"$ifNull": ["$normalized_title", ""]}, "regex": f"^{pattern}"}},
+                        1,
+                        2,
+                    ]},
+                ]
+            },
+            "_popularity": {"$ifNull": ["$downloads", 0]},
+        }},
+        {"$sort": {"_match_rank": 1, "_popularity": -1, "title": 1}},
+        {"$skip": skip},
+        {"$limit": limit},
+        {"$project": {
+            "name": 1, "title": 1, "chat_id": 1, "message_id": 1,
+            "media_type": 1, "size": 1, "downloads": 1,
+        }},
+    ]
+    return await get_database().files.aggregate(pipeline).to_list(length=limit)
 
 
 async def count_search_files(query: str) -> int:

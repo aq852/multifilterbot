@@ -75,6 +75,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Admin catalog backup and restore through `/exportcatalog` and `/importcatalog`
 - Telegram `t.me` message-link parsing for indexed `/info` and `/link` requests
 - Split-file detection and ordered grouping through `/parts`
+- Smart search ranking for exact matches, title prefixes, and popular files
 
 ## Local setup
 
