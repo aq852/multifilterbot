@@ -7,6 +7,7 @@ from app.config import settings
 from app.database import close_database, connect_database
 from app.handlers import admin_router, automation_router, common_router, discovery_router, indexing_router, management_router, payments_router, redeem_router, referrals_router, requests_router, saved_router, search_router, settings_router, utility_router
 from app.health import run_health_server
+from app.services.commands import configure_bot_commands
 from app.middlewares.ban import BanMiddleware
 from app.middlewares.audit import AuditMiddleware
 from app.middlewares.errors import ErrorMiddleware
@@ -26,6 +27,7 @@ async def main() -> None:
 
     await connect_database()
     bot = Bot(settings.bot_token)
+    await configure_bot_commands(bot)
     dispatcher = Dispatcher()
     rate_limiter = RateLimitMiddleware()
     error_middleware = ErrorMiddleware()

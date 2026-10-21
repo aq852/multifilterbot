@@ -3,9 +3,16 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from app.repositories.files import find_files_by_name, get_file
+from app.database import ping_database
 from app.services.deeplinks import build_file_payload
 
 router = Router(name="utility")
+
+
+@router.message(Command("ping"))
+async def ping_command(message: Message) -> None:
+    database_ok = await ping_database()
+    await message.answer(f"Bot: online\nDatabase: {'online' if database_ok else 'offline'}")
 
 
 @router.message(Command("id"))
