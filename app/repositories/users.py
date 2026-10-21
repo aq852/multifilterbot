@@ -4,14 +4,18 @@ from typing import Any
 from app.database import get_database
 
 
-async def upsert_user(user_id: int, username: str | None, first_name: str | None) -> None:
+async def upsert_user(
+    user_id: int, username: str | None, first_name: str | None, referrer_id: int | None = None
+) -> bool:
     now = datetime.now(timezone.utc)
     await get_database().users.update_one(
         {"_id": user_id},
         {"$set": {"username": username, "first_name": first_name, "last_seen": now},
-         "$setOnInsert": {"is_banned": False, "is_premium": False, "created_at": now}},
+         "$setOnInsert": {"is_banned": False, "is_premium": False, "created_at": now,
+                           "referrer_id": referrer_id}},
         upsert=True,
     )
+    return result.upserted_id is not None
 
 
 async def get_user(user_id: int) -> dict[str, Any] | None:
