@@ -67,6 +67,7 @@ async def help_command(message: Message) -> None:
         "/popular - most downloaded files\n"
         "/random - random file\n"
         "/ping - check bot and database status\n"
+        "/profile - view your account summary\n"
         "/related <filename> - find similar files\n"
         "/history - your recent searches\n"
         "/clearhistory - clear your search history\n\n"

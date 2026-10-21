@@ -7,6 +7,7 @@ from app.config import settings
 USER_COMMANDS = [
     BotCommand(command="start", description="Start the bot"),
     BotCommand(command="help", description="Show available commands"),
+    BotCommand(command="profile", description="View your profile"),
     BotCommand(command="search", description="Search indexed files"),
     BotCommand(command="latest", description="Show recent files"),
     BotCommand(command="popular", description="Show popular files"),

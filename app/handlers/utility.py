@@ -1,12 +1,39 @@
+from datetime import timezone
+
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
 from app.repositories.files import find_files_by_name, get_file
 from app.database import ping_database
+from app.repositories.profile import get_profile
 from app.services.deeplinks import build_file_payload
 
 router = Router(name="utility")
+
+
+@router.message(Command("profile"))
+async def profile_command(message: Message) -> None:
+    if message.from_user is None:
+        return
+    profile = await get_profile(message.from_user.id)
+    user = profile["user"]
+    premium_until = profile["premium_until"]
+    premium_text = (
+        f"Active until {premium_until.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
+        if premium_until else "Inactive"
+    )
+    username = f"@{user['username']}" if user.get("username") else "not set"
+    await message.answer(
+        "Your profile\n\n"
+        f"Name: {user.get('first_name') or message.from_user.first_name or 'unknown'}\n"
+        f"Username: {username}\n"
+        f"User ID: {message.from_user.id}\n"
+        f"Premium: {premium_text}\n"
+        f"Saved files: {profile['saved_count']}\n"
+        f"Open requests: {profile['open_requests']}\n"
+        f"Search history entries: {profile['history_count']}"
+    )
 
 
 @router.message(Command("ping"))
