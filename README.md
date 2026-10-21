@@ -61,6 +61,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - `/random` discovery command for a random indexed file
 - Docker and Docker Compose setup
 - Production Docker healthcheck, non-root container user, VPS compose profile, and Koyeb deployment guide
+- GitHub Actions CI for tests, compilation, imports, and Docker builds
 
 ## Local setup
 
