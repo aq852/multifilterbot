@@ -5,7 +5,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 from app.access import is_admin
 from app.models import file_document
 from app.repositories.channels import add_channel, is_indexed_channel, list_channels, remove_channel
-from app.repositories.files import delete_file, find_files_by_name, save_file
+from app.repositories.files import delete_file, find_files_by_name, rename_file, save_file
 from app.repositories.subscriptions import add_required_channel, list_required_channels, remove_required_channel
 
 router = Router(name="indexing")
@@ -158,6 +158,20 @@ async def delete_file_command(message: Message) -> None:
         callback_data=f"admindelete:{item['chat_id']}:{item['message_id']}",
     )] for item in matches]
     await message.answer("Multiple files matched. Choose one to remove:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+
+@router.message(Command("renamefile"))
+async def rename_file_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    target = message.reply_to_message
+    parts = (message.text or "").split(maxsplit=1)
+    if target is None or len(parts) != 2 or not parts[1].strip():
+        await message.answer("Reply to an indexed file with /renamefile <new title>.")
+        return
+    renamed = await rename_file(target.chat.id, target.message_id, parts[1])
+    await message.answer("File title updated and re-indexed." if renamed else "That file is not indexed.")
 
 
 @router.callback_query(F.data.startswith("admindelete:"))

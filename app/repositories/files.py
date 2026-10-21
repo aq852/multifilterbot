@@ -2,6 +2,8 @@ import re
 from typing import Any
 
 from app.database import get_database
+from app.services.metadata import extract_metadata
+from app.services.search import build_search_terms, normalize_title
 from app.services.search import parse_media_filter, parse_search_filters, search_pattern
 
 
@@ -65,3 +67,20 @@ async def find_files_by_name(query: str, limit: int = 10) -> list[dict[str, Any]
         {"name": 1, "title": 1, "chat_id": 1, "message_id": 1},
     ).sort("title", 1).limit(limit)
     return await cursor.to_list(length=limit)
+
+
+async def rename_file(chat_id: int, message_id: int, title: str) -> bool:
+    clean_title = title.strip()
+    if not clean_title:
+        return False
+    metadata = extract_metadata(clean_title)
+    result = await get_database().files.update_one(
+        {"chat_id": chat_id, "message_id": message_id},
+        {"$set": {
+            "title": clean_title,
+            "normalized_title": normalize_title(clean_title),
+            "search_terms": build_search_terms(clean_title),
+            **metadata,
+        }},
+    )
+    return result.matched_count > 0

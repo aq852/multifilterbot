@@ -33,6 +33,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Deep-link file sharing with `/share` on indexed messages
 - Download counters and `/popular` discovery list
 - Admin catalog cleanup with `/deletefile` (reply to a file, pass chat/message IDs, or search by filename)
+- Admin title editing with `/renamefile <new title>` on a replied indexed file
 - Docker and Docker Compose setup
 
 ## Local setup
