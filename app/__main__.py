@@ -5,9 +5,10 @@ from aiogram import Bot, Dispatcher
 
 from app.config import settings
 from app.database import close_database, connect_database
-from app.handlers import admin_router, automation_router, common_router, discovery_router, indexing_router, management_router, payments_router, redeem_router, referrals_router, search_router
+from app.handlers import admin_router, automation_router, common_router, discovery_router, indexing_router, management_router, payments_router, redeem_router, referrals_router, search_router, utility_router
 from app.health import run_health_server
 from app.middlewares.ban import BanMiddleware
+from app.middlewares.maintenance import MaintenanceMiddleware
 
 
 async def main() -> None:
@@ -25,7 +26,9 @@ async def main() -> None:
     dispatcher = Dispatcher()
     dispatcher.message.middleware(BanMiddleware())
     dispatcher.callback_query.middleware(BanMiddleware())
-    dispatcher.include_routers(common_router, admin_router, indexing_router, search_router, payments_router, redeem_router, management_router, automation_router, referrals_router, discovery_router)
+    dispatcher.message.middleware(MaintenanceMiddleware())
+    dispatcher.callback_query.middleware(MaintenanceMiddleware())
+    dispatcher.include_routers(common_router, admin_router, indexing_router, search_router, payments_router, redeem_router, management_router, automation_router, referrals_router, discovery_router, utility_router)
 
     try:
         await asyncio.gather(

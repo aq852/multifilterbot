@@ -7,6 +7,7 @@ from aiogram.types import Message
 
 from app.access import is_admin
 from app.repositories.stats import get_stats
+from app.repositories.settings import set_maintenance
 from app.repositories.users import get_user, list_user_ids, mark_user_blocked, set_banned
 
 router = Router(name="management")
@@ -89,6 +90,20 @@ async def user_command(message: Message) -> None:
         f"Premium: {'yes' if user.get('is_premium') else 'no'}\n"
         f"Banned: {'yes' if user.get('is_banned') else 'no'}"
     )
+
+
+@router.message(Command("maintenance"))
+async def maintenance_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2 or parts[1].lower() not in {"on", "off"}:
+        await message.answer("Usage: /maintenance on or /maintenance off")
+        return
+    enabled = parts[1].lower() == "on"
+    await set_maintenance(enabled)
+    await message.answer(f"Maintenance mode {'enabled' if enabled else 'disabled'}.")
 
 
 @router.message(Command("broadcast"))
