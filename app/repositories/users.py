@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import re
 from typing import Any
 
 from pymongo import ReturnDocument
@@ -24,6 +25,17 @@ async def get_user(user_id: int) -> dict[str, Any] | None:
     return await get_database().users.find_one({"_id": user_id})
 
 
+async def get_user_by_username(username: str) -> dict[str, Any] | None:
+    value = re.escape(username.lstrip("@"))
+    return await get_database().users.find_one({"username": {"$regex": f"^{value}$", "$options": "i"}})
+
+
+async def list_users(limit: int = 25, skip: int = 0) -> list[dict[str, Any]]:
+    return await get_database().users.find(
+        {}, {"username": 1, "first_name": 1, "is_banned": 1, "is_blocked": 1, "is_premium": 1, "warnings": 1}
+    ).sort("last_seen", -1).skip(skip).limit(limit).to_list(length=limit)
+
+
 async def list_user_ids() -> list[int]:
     users = await get_database().users.find(
         {"is_blocked": {"$ne": True}, "is_banned": {"$ne": True}}, {"_id": 1}
@@ -33,6 +45,12 @@ async def list_user_ids() -> list[int]:
 
 async def mark_user_blocked(user_id: int) -> None:
     await get_database().users.update_one({"_id": user_id}, {"$set": {"is_blocked": True}})
+
+
+async def set_user_blocked(user_id: int, blocked: bool) -> None:
+    await get_database().users.update_one(
+        {"_id": user_id}, {"$set": {"is_blocked": blocked}}, upsert=True
+    )
 
 
 async def set_banned(user_id: int, banned: bool) -> None:

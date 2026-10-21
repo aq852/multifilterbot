@@ -9,7 +9,7 @@ from app.access import is_admin
 from app.repositories.stats import get_stats
 from app.repositories.settings import set_maintenance
 from app.repositories.settings import set_caption_template
-from app.repositories.users import add_warning, clear_warnings, get_user, get_warnings, list_user_ids, mark_user_blocked, set_banned
+from app.repositories.users import add_warning, clear_warnings, get_user, get_user_by_username, get_warnings, list_user_ids, list_users, mark_user_blocked, set_banned, set_user_blocked
 
 router = Router(name="management")
 
@@ -138,6 +138,87 @@ async def user_command(message: Message) -> None:
         f"Premium: {'yes' if user.get('is_premium') else 'no'}\n"
         f"Banned: {'yes' if user.get('is_banned') else 'no'}"
     )
+
+
+async def _user_reference(message: Message) -> dict | None:
+    if message.reply_to_message and message.reply_to_message.from_user:
+        return await get_user(message.reply_to_message.from_user.id)
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2:
+        return None
+    reference = parts[1].strip()
+    try:
+        return await get_user(int(reference))
+    except ValueError:
+        return await get_user_by_username(reference)
+
+
+@router.message(Command("users"))
+async def users_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    users = await list_users()
+    if not users:
+        await message.answer("No users registered yet.")
+        return
+    lines = []
+    for item in users:
+        flags = []
+        if item.get("is_premium"):
+            flags.append("premium")
+        if item.get("is_banned"):
+            flags.append("banned")
+        if item.get("is_blocked"):
+            flags.append("blocked")
+        label = "@" + item["username"] if item.get("username") else item.get("first_name", "unknown")
+        lines.append(f"{item['_id']} - {label} ({', '.join(flags) or 'active'})")
+    await message.answer("Recent users:\n" + "\n".join(lines))
+
+
+@router.message(Command("finduser"))
+async def find_user_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    user = await _user_reference(message)
+    if user is None:
+        await message.answer("User not found. Use /finduser <user_id or @username>.")
+        return
+    await message.answer(
+        f"User: {user['_id']}\nUsername: @{user.get('username') or '-'}\n"
+        f"Name: {user.get('first_name') or '-'}\nBlocked: {'yes' if user.get('is_blocked') else 'no'}\n"
+        f"Banned: {'yes' if user.get('is_banned') else 'no'}\nWarnings: {user.get('warnings', 0)}"
+    )
+
+
+@router.message(Command("block"))
+async def block_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    user = await _user_reference(message)
+    if user is None:
+        await message.answer("Reply to a user or use /block <user_id or @username>.")
+        return
+    if is_admin(user["_id"]):
+        await message.answer("Configured admins cannot be blocked.")
+        return
+    await set_user_blocked(user["_id"], True)
+    await message.answer(f"User {user['_id']} blocked from broadcasts.")
+
+
+@router.message(Command("unblock"))
+async def unblock_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    user = await _user_reference(message)
+    if user is None:
+        await message.answer("Reply to a user or use /unblock <user_id or @username>.")
+        return
+    await set_user_blocked(user["_id"], False)
+    await message.answer(f"User {user['_id']} unblocked for broadcasts.")
 
 
 @router.message(Command("maintenance"))

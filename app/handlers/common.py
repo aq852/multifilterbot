@@ -86,6 +86,7 @@ async def help_command(message: Message) -> None:
             "/addchannel, /removechannel, /channels\n"
             "/deletefile, /renamefile\n"
             "/stats, /broadcast, /ban, /unban\n"
+            "/users, /finduser, /block, /unblock\n"
             "/maintenance, /setcaption\n"
             "/warn, /warnings, /clearwarnings\n"
             "/autoreactall on <emoji>, /autoreactall off\n"
