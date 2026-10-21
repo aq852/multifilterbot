@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     health_host: str = "0.0.0.0"
     health_port: int = 8080
+    rate_limit_window: float = 3.0
+    rate_limit_burst: int = 6
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="", extra="ignore")
 

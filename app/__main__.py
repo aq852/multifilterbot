@@ -9,6 +9,7 @@ from app.handlers import admin_router, automation_router, common_router, discove
 from app.health import run_health_server
 from app.middlewares.ban import BanMiddleware
 from app.middlewares.maintenance import MaintenanceMiddleware
+from app.middlewares.rate_limit import RateLimitMiddleware
 
 
 async def main() -> None:
@@ -24,10 +25,13 @@ async def main() -> None:
     await connect_database()
     bot = Bot(settings.bot_token)
     dispatcher = Dispatcher()
+    rate_limiter = RateLimitMiddleware()
     dispatcher.message.middleware(BanMiddleware())
     dispatcher.callback_query.middleware(BanMiddleware())
     dispatcher.message.middleware(MaintenanceMiddleware())
     dispatcher.callback_query.middleware(MaintenanceMiddleware())
+    dispatcher.message.middleware(rate_limiter)
+    dispatcher.callback_query.middleware(rate_limiter)
     dispatcher.include_routers(common_router, admin_router, indexing_router, search_router, payments_router, redeem_router, management_router, automation_router, referrals_router, discovery_router, utility_router, settings_router, requests_router, saved_router)
 
     try:
