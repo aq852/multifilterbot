@@ -21,6 +21,17 @@ async def welcome_enabled(chat_id: int) -> bool:
     return bool(setting and setting.get("enabled"))
 
 
+async def set_goodbye(chat_id: int, enabled: bool) -> None:
+    await get_database().bot_settings.update_one(
+        {"_id": f"goodbye:{chat_id}"}, {"$set": {"enabled": enabled}}, upsert=True
+    )
+
+
+async def goodbye_enabled(chat_id: int) -> bool:
+    setting = await get_database().bot_settings.find_one({"_id": f"goodbye:{chat_id}"})
+    return bool(setting and setting.get("enabled"))
+
+
 async def auto_approve_enabled() -> bool:
     setting = await get_database().bot_settings.find_one({"_id": "auto_approve"})
     return bool(setting and setting.get("enabled"))

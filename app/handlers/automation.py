@@ -17,8 +17,10 @@ from app.repositories.automation import (
     set_auto_approve,
     set_global_reaction,
     set_reaction,
+    set_goodbye,
     set_welcome,
     welcome_enabled,
+    goodbye_enabled,
     remove_global_reaction_ignore,
 )
 
@@ -59,6 +61,20 @@ async def welcome_command(message: Message) -> None:
     enabled = parts[1].lower() == "on"
     await set_welcome(message.chat.id, enabled)
     await message.answer(f"Welcome messages {'enabled' if enabled else 'disabled'} for this chat.")
+
+
+@router.message(Command("goodbye"))
+async def goodbye_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2 or parts[1].lower() not in {"on", "off"}:
+        await message.answer("Usage: /goodbye on or /goodbye off")
+        return
+    enabled = parts[1].lower() == "on"
+    await set_goodbye(message.chat.id, enabled)
+    await message.answer(f"Goodbye messages {'enabled' if enabled else 'disabled'} for this chat.")
 
 
 @router.message(Command("autoreact"))
@@ -193,6 +209,13 @@ async def welcome_new_members(message: Message) -> None:
         return
     names = ", ".join(member.full_name for member in message.new_chat_members)
     await message.answer(f"Welcome, {names}! Please read the group rules and enjoy your stay.")
+
+
+@router.message(F.left_chat_member)
+async def goodbye_member(message: Message) -> None:
+    if not await goodbye_enabled(message.chat.id) or message.left_chat_member is None:
+        return
+    await message.answer(f"Goodbye, {message.left_chat_member.full_name}! Take care.")
     try:
         await request.bot.approve_chat_join_request(request.chat.id, request.from_user.id)
     except (TelegramBadRequest, TelegramForbiddenError):
