@@ -23,6 +23,7 @@ async def initialize_indexes() -> None:
     await db.files.create_index("search_terms")
     await db.force_sub.create_index("title")
     await db.payments.create_index("charge_id", unique=True)
+    await db.reaction_rules.create_index("_id", unique=True)
 
 
 async def close_database() -> None:
