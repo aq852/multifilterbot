@@ -1,21 +1,60 @@
 import asyncio
+import io
+import json
 
 from aiogram import Router
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import BufferedInputFile, Message
 
 from app.access import is_admin
 from app.repositories.stats import get_stats
 from app.repositories.settings import set_maintenance
 from app.repositories.settings import set_caption_template
 from app.repositories.users import add_warning, clear_warnings, get_user, get_user_by_username, get_warnings, list_user_ids, list_users, mark_user_blocked, set_banned, set_user_blocked
+from app.repositories.backup import export_catalog, import_catalog
 
 router = Router(name="management")
 
 
 def _admin(message: Message) -> bool:
     return message.from_user is not None and is_admin(message.from_user.id)
+
+
+@router.message(Command("exportcatalog"))
+async def export_catalog_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    payload = await export_catalog()
+    data = json.dumps(payload, ensure_ascii=False, default=str, indent=2).encode("utf-8")
+    await message.answer_document(
+        BufferedInputFile(data, filename="multifilterbot-catalog.json"),
+        caption=f"Catalog backup: {len(payload['files'])} files, {len(payload['channels'])} channels.",
+    )
+
+
+@router.message(Command("importcatalog"))
+async def import_catalog_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    document = message.reply_to_message.document if message.reply_to_message else None
+    if document is None:
+        await message.answer("Reply to a catalog JSON document with /importcatalog.")
+        return
+    buffer = io.BytesIO()
+    await message.bot.download(document.file_id, destination=buffer)
+    try:
+        payload = json.loads(buffer.getvalue().decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        await message.answer("Invalid catalog JSON file.")
+        return
+    if not isinstance(payload, dict) or payload.get("format") != "multifilterbot-catalog-v1":
+        await message.answer("Unsupported catalog format.")
+        return
+    files, channels = await import_catalog(payload)
+    await message.answer(f"Catalog restored. Files: {files}; channels: {channels}.")
 
 
 @router.message(Command("stats"))

@@ -27,6 +27,8 @@ ADMIN_COMMANDS = USER_COMMANDS + [
     BotCommand(command="audit", description="View admin activity"),
     BotCommand(command="stats", description="View bot statistics"),
     BotCommand(command="broadcast", description="Broadcast a message"),
+    BotCommand(command="exportcatalog", description="Export catalog backup"),
+    BotCommand(command="importcatalog", description="Restore catalog backup"),
 ]
 
 
