@@ -2,6 +2,13 @@ import re
 
 STOP_WORDS = {"a", "an", "and", "in", "of", "on", "the", "to"}
 MEDIA_TYPES = {"video", "document", "audio", "photo"}
+METADATA_FILTERS = {
+    "quality": "quality",
+    "resolution": "resolution",
+    "season": "season",
+    "language": "language",
+    "lang": "language",
+}
 
 
 def normalize_title(value: str) -> str:
@@ -24,3 +31,17 @@ def parse_media_filter(query: str) -> tuple[str, str | None]:
     if separator and prefix.casefold() in MEDIA_TYPES and remainder.strip():
         return remainder.strip(), prefix.casefold()
     return query.strip(), None
+
+
+def parse_search_filters(query: str) -> tuple[str, dict[str, str]]:
+    """Extract supported ``key:value`` filters from a search query."""
+    filters: dict[str, str] = {}
+    remaining: list[str] = []
+    for part in query.split():
+        prefix, separator, value = part.partition(":")
+        key = METADATA_FILTERS.get(prefix.casefold())
+        if separator and key and value.strip():
+            filters[key] = value.strip().casefold()
+        else:
+            remaining.append(part)
+    return " ".join(remaining).strip(), filters

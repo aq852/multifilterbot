@@ -1,7 +1,7 @@
 from typing import Any
 
 from app.database import get_database
-from app.services.search import parse_media_filter, search_pattern
+from app.services.search import parse_media_filter, parse_search_filters, search_pattern
 
 
 async def save_file(document: dict[str, Any]) -> bool:
@@ -14,12 +14,14 @@ async def save_file(document: dict[str, Any]) -> bool:
 
 async def search_files(query: str, limit: int = 5, skip: int = 0, media_type: str | None = None) -> list[dict[str, Any]]:
     query, detected_type = parse_media_filter(query)
+    query, metadata_filters = parse_search_filters(query)
     media_type = media_type or detected_type
     pattern = search_pattern(query)
     filters: dict[str, Any] = {"$or": [{"normalized_title": {"$regex": pattern}},
                                         {"search_terms": {"$regex": pattern}}]}
     if media_type:
         filters["media_type"] = media_type
+    filters.update(metadata_filters)
     cursor = get_database().files.find(
         filters,
         {"name": 1, "title": 1, "chat_id": 1, "message_id": 1, "media_type": 1, "size": 1},
@@ -29,11 +31,13 @@ async def search_files(query: str, limit: int = 5, skip: int = 0, media_type: st
 
 async def count_search_files(query: str) -> int:
     query, media_type = parse_media_filter(query)
+    query, metadata_filters = parse_search_filters(query)
     pattern = search_pattern(query)
     filters: dict[str, Any] = {"$or": [{"normalized_title": {"$regex": pattern}},
                                         {"search_terms": {"$regex": pattern}}]}
     if media_type:
         filters["media_type"] = media_type
+    filters.update(metadata_filters)
     return await get_database().files.count_documents(filters)
 
 
