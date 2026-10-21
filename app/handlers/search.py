@@ -44,10 +44,13 @@ async def _results_markup(query: str, token: str, page: int) -> tuple[str, Inlin
     results = await search_files(query, limit=PAGE_SIZE, skip=page * PAGE_SIZE, media_type=media_type)
     if not results:
         return "No matching files found.", None
-    buttons = [[InlineKeyboardButton(
-        text=(item.get("title") or item.get("name", "untitled"))[:60],
-        callback_data=f"file:{item['chat_id']}:{item['message_id']}",
-    )] for item in results]
+    buttons = [[
+        InlineKeyboardButton(
+            text=(item.get("title") or item.get("name", "untitled"))[:60],
+            callback_data=f"file:{item['chat_id']}:{item['message_id']}",
+        ),
+        InlineKeyboardButton(text="🔖 Save", callback_data=f"save:{item['chat_id']}:{item['message_id']}"),
+    ] for item in results]
     navigation = []
     if page > 0:
         navigation.append(InlineKeyboardButton(text="⬅️ Previous", callback_data=f"search:{token}:{page - 1}"))
