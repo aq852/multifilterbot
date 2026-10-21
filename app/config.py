@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     health_port: int = 8080
     rate_limit_window: float = 3.0
     rate_limit_burst: int = 6
+    mongo_connect_retries: int = 5
+    mongo_retry_delay: float = 2.0
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="", extra="ignore")
 

@@ -1,17 +1,36 @@
+import asyncio
+import logging
+
 from pymongo import AsyncMongoClient
 
 from app.config import settings
 
 client: AsyncMongoClient | None = None
 database = None
+logger = logging.getLogger(__name__)
 
 
 async def connect_database() -> None:
     global client, database
-    client = AsyncMongoClient(settings.mongo_uri, serverSelectionTimeoutMS=5000)
-    await client.admin.command("ping")
-    database = client[settings.mongo_db_name]
-    await initialize_indexes()
+    last_error: Exception | None = None
+    for attempt in range(1, settings.mongo_connect_retries + 1):
+        try:
+            client = AsyncMongoClient(settings.mongo_uri, serverSelectionTimeoutMS=5000)
+            await client.admin.command("ping")
+            database = client[settings.mongo_db_name]
+            await initialize_indexes()
+            logger.info("Connected to MongoDB on attempt %s", attempt)
+            return
+        except Exception as error:
+            last_error = error
+            logger.warning("MongoDB connection attempt %s/%s failed: %s", attempt, settings.mongo_connect_retries, error)
+            if client is not None:
+                await client.close()
+                client = None
+            database = None
+            if attempt < settings.mongo_connect_retries:
+                await asyncio.sleep(settings.mongo_retry_delay * attempt)
+    raise RuntimeError("Could not connect to MongoDB after retries") from last_error
 
 
 async def initialize_indexes() -> None:
@@ -34,8 +53,11 @@ async def initialize_indexes() -> None:
 
 
 async def close_database() -> None:
+    global client, database
     if client is not None:
         await client.close()
+    client = None
+    database = None
 
 
 async def ping_database() -> bool:
