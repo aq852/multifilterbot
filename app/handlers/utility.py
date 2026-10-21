@@ -21,6 +21,38 @@ async def id_command(message: Message) -> None:
 @router.message(Command("info"))
 async def info_command(message: Message) -> None:
     target = message.reply_to_message
+    indexed_file = None
+    if target is not None:
+        indexed_file = await get_file(target.chat.id, target.message_id)
+    else:
+        parts = (message.text or "").split(maxsplit=1)
+        if len(parts) == 2 and parts[1].strip():
+            matches = await find_files_by_name(parts[1].strip(), limit=5)
+            if not matches:
+                await message.answer("No indexed file matched that filename.")
+                return
+            if len(matches) > 1:
+                await message.answer("Multiple files matched. Refine the filename or reply to the exact file.")
+                return
+            indexed_file = await get_file(matches[0]["chat_id"], matches[0]["message_id"])
+        else:
+            await message.answer("Reply to a media file or use /info <filename>.")
+            return
+    if indexed_file is not None:
+        metadata = "\n".join(
+            f"{label}: {indexed_file[field]}" for field, label in (
+                ("resolution", "Resolution"), ("season", "Season"),
+                ("quality", "Quality"), ("language", "Language"),
+            ) if indexed_file.get(field)
+        )
+        details = [
+            f"Type: {indexed_file.get('media_type', 'unknown')}",
+            f"Title: {indexed_file.get('title') or indexed_file.get('name', 'untitled')}",
+            f"Size: {indexed_file.get('size') or 'unknown'} bytes",
+            f"Downloads: {indexed_file.get('downloads', 0)}",
+        ]
+        await message.answer("\n".join(details + ([metadata] if metadata else [])))
+        return
     if target is None:
         await message.answer("Reply to a document, video, audio, or photo with /info.")
         return
