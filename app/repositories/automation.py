@@ -15,6 +15,20 @@ async def auto_approve_enabled() -> bool:
     return bool(setting and setting.get("enabled"))
 
 
+async def set_global_reaction(emojis: list[str] | None) -> None:
+    if emojis:
+        await get_database().bot_settings.update_one(
+            {"_id": "global_reaction"}, {"$set": {"emojis": emojis}}, upsert=True
+        )
+    else:
+        await get_database().bot_settings.delete_one({"_id": "global_reaction"})
+
+
+async def global_reaction() -> list[str]:
+    setting = await get_database().bot_settings.find_one({"_id": "global_reaction"})
+    return list(setting.get("emojis", [])) if setting else []
+
+
 async def set_reaction(chat_id: int, emojis: list[str]) -> None:
     await get_database().reaction_rules.update_one(
         {"_id": chat_id}, {"$set": {"emojis": emojis, "emoji": emojis[0]}}, upsert=True

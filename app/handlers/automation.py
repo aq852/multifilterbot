@@ -1,3 +1,5 @@
+import random
+
 from aiogram import Router
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.filters import Command
@@ -6,10 +8,12 @@ from aiogram.types import ChatJoinRequest, Message, ReactionTypeEmoji
 from app.access import is_admin
 from app.repositories.automation import (
     auto_approve_enabled,
+    global_reaction,
     list_reactions,
     reaction_for_chat,
     remove_reaction,
     set_auto_approve,
+    set_global_reaction,
     set_reaction,
 )
 
@@ -60,6 +64,27 @@ async def auto_react_command(message: Message) -> None:
     await message.answer(f"Automatic reactions {', '.join(emojis)} enabled for {chat_id}.")
 
 
+@router.message(Command("autoreactall"))
+async def global_auto_react_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    parts = (message.text or "").split(maxsplit=2)
+    if len(parts) < 2 or parts[1].lower() not in {"on", "off"}:
+        await message.answer("Usage: /autoreactall on <emoji>[,emoji,...] or /autoreactall off")
+        return
+    if parts[1].lower() == "off":
+        await set_global_reaction(None)
+        await message.answer("Global automatic reactions disabled.")
+        return
+    emojis = _parse_emojis(parts[2]) if len(parts) == 3 else []
+    if not emojis or len(emojis) > 5 or any(len(emoji) > 8 for emoji in emojis):
+        await message.answer("Provide 1 to 5 Telegram emojis separated by commas.")
+        return
+    await set_global_reaction(emojis)
+    await message.answer(f"Global automatic reactions enabled: {', '.join(emojis)}")
+
+
 @router.message(Command("removeautoreact"))
 async def remove_auto_react_command(message: Message) -> None:
     if not _admin(message):
@@ -105,6 +130,28 @@ async def approve_join_request(request: ChatJoinRequest) -> None:
 @router.channel_post()
 async def react_to_channel_post(message: Message) -> None:
     emoji = await reaction_for_chat(message.chat.id)
+    if emoji is None:
+        emojis = await global_reaction()
+        emoji = random.choice(emojis) if emojis else None
+    if emoji is None:
+        return
+    try:
+        await message.bot.set_message_reaction(
+            chat_id=message.chat.id,
+            message_id=message.message_id,
+            reaction=[ReactionTypeEmoji(emoji=emoji)],
+        )
+    except (TelegramBadRequest, TelegramForbiddenError):
+        return
+
+
+@router.message()
+async def react_to_any_message(message: Message) -> None:
+    """React in private chats/groups where Telegram delivers message updates."""
+    emoji = await reaction_for_chat(message.chat.id)
+    if emoji is None:
+        emojis = await global_reaction()
+        emoji = random.choice(emojis) if emojis else None
     if emoji is None:
         return
     try:
