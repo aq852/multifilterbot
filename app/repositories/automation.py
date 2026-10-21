@@ -1,3 +1,4 @@
+import random
 from typing import Any
 
 from app.database import get_database
@@ -14,9 +15,9 @@ async def auto_approve_enabled() -> bool:
     return bool(setting and setting.get("enabled"))
 
 
-async def set_reaction(chat_id: int, emoji: str) -> None:
+async def set_reaction(chat_id: int, emojis: list[str]) -> None:
     await get_database().reaction_rules.update_one(
-        {"_id": chat_id}, {"$set": {"emoji": emoji}}, upsert=True
+        {"_id": chat_id}, {"$set": {"emojis": emojis, "emoji": emojis[0]}}, upsert=True
     )
 
 
@@ -27,9 +28,11 @@ async def remove_reaction(chat_id: int) -> bool:
 
 async def reaction_for_chat(chat_id: int) -> str | None:
     rule: dict[str, Any] | None = await get_database().reaction_rules.find_one({"_id": chat_id})
-    return rule.get("emoji") if rule else None
+    if not rule:
+        return None
+    emojis = rule.get("emojis") or ([rule["emoji"]] if rule.get("emoji") else [])
+    return random.choice(emojis) if emojis else None
 
 
 async def list_reactions() -> list[dict[str, Any]]:
     return await get_database().reaction_rules.find().sort("_id", 1).to_list(length=100)
-

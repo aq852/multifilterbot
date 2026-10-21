@@ -16,6 +16,10 @@ from app.repositories.automation import (
 router = Router(name="automation")
 
 
+def _parse_emojis(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 def _admin(message: Message) -> bool:
     return message.from_user is not None and is_admin(message.from_user.id)
 
@@ -41,19 +45,19 @@ async def auto_react_command(message: Message) -> None:
         return
     parts = (message.text or "").split(maxsplit=2)
     if len(parts) != 3:
-        await message.answer("Usage: /autoreact <chat_id> <emoji>")
+        await message.answer("Usage: /autoreact <chat_id> <emoji>[,emoji,...]")
         return
     try:
         chat_id = int(parts[1])
     except ValueError:
         await message.answer("The chat ID must be a number.")
         return
-    emoji = parts[2].strip()
-    if not emoji or len(emoji) > 8:
-        await message.answer("Provide one Telegram emoji.")
+    emojis = _parse_emojis(parts[2])
+    if not emojis or len(emojis) > 5 or any(len(emoji) > 8 for emoji in emojis):
+        await message.answer("Provide 1 to 5 Telegram emojis separated by commas.")
         return
-    await set_reaction(chat_id, emoji)
-    await message.answer(f"Automatic reaction {emoji} enabled for {chat_id}.")
+    await set_reaction(chat_id, emojis)
+    await message.answer(f"Automatic reactions {', '.join(emojis)} enabled for {chat_id}.")
 
 
 @router.message(Command("removeautoreact"))
@@ -84,7 +88,7 @@ async def auto_reacts_command(message: Message) -> None:
         await message.answer("No automatic reaction rules configured.")
         return
     await message.answer("Automatic reactions:\n" + "\n".join(
-        f"- {rule['_id']}: {rule['emoji']}" for rule in rules
+        f"- {rule['_id']}: {', '.join(rule.get('emojis') or [rule.get('emoji', '')])}" for rule in rules
     ))
 
 
@@ -111,4 +115,3 @@ async def react_to_channel_post(message: Message) -> None:
         )
     except (TelegramBadRequest, TelegramForbiddenError):
         return
-
