@@ -60,6 +60,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - `/info` supports replies and unique filename matches with indexed metadata
 - `/random` discovery command for a random indexed file
 - Docker and Docker Compose setup
+- Production Docker healthcheck, non-root container user, VPS compose profile, and Koyeb deployment guide
 
 ## Local setup
 
@@ -71,3 +72,5 @@ The health endpoint is available at `http://localhost:8080/health`.
 
 Only index and distribute media that you are authorized to access and share. Never commit tokens,
 session strings, database credentials, or other secrets.
+
+See `docs/deployment.md` for VPS and Koyeb deployment instructions.
