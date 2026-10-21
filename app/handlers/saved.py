@@ -2,7 +2,8 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from app.repositories.saved_files import list_saved_files, remove_saved_file, save_file_for_user
+from app.repositories.files import find_files_by_name
+from app.repositories.saved_files import clear_saved_files, list_saved_files, remove_saved_file, save_file_for_user
 
 router = Router(name="saved")
 
@@ -34,6 +35,38 @@ async def saved_command(message: Message) -> None:
             InlineKeyboardButton(text="✕", callback_data=f"unsave:{target}"),
         ])
     await message.answer("Your saved files:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+
+@router.message(Command("unsave"))
+async def unsave_command(message: Message) -> None:
+    if message.from_user is None:
+        return
+    target = message.reply_to_message
+    if target is not None:
+        chat_id, message_id = target.chat.id, target.message_id
+    else:
+        parts = (message.text or "").split(maxsplit=1)
+        if len(parts) != 2 or not parts[1].strip():
+            await message.answer("Reply to a saved file or use /unsave <filename>.")
+            return
+        matches = await find_files_by_name(parts[1].strip(), limit=5)
+        if not matches:
+            await message.answer("No indexed file matched that filename.")
+            return
+        if len(matches) > 1:
+            await message.answer("Multiple files matched. Refine the filename or reply to the exact file.")
+            return
+        chat_id, message_id = matches[0]["chat_id"], matches[0]["message_id"]
+    removed = await remove_saved_file(message.from_user.id, chat_id, message_id)
+    await message.answer("Removed from saved files." if removed else "That file was not saved.")
+
+
+@router.message(Command("clearsaved"))
+async def clear_saved_command(message: Message) -> None:
+    if message.from_user is None:
+        return
+    deleted = await clear_saved_files(message.from_user.id)
+    await message.answer(f"Cleared {deleted} saved file{'s' if deleted != 1 else ''}.")
 
 
 @router.callback_query(F.data.startswith("save:"))

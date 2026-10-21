@@ -31,3 +31,8 @@ async def list_saved_files(user_id: int, limit: int = 20) -> list[dict[str, Any]
     by_target = {(item["chat_id"], item["message_id"]): item for item in files}
     return [by_target[target["chat_id"], target["message_id"]] for target in targets
             if (target["chat_id"], target["message_id"]) in by_target]
+
+
+async def clear_saved_files(user_id: int) -> int:
+    result = await get_database().saved_files.delete_many({"user_id": user_id})
+    return result.deleted_count
