@@ -9,7 +9,7 @@ from app.access import is_admin
 from app.repositories.stats import get_stats
 from app.repositories.settings import set_maintenance
 from app.repositories.settings import set_caption_template
-from app.repositories.users import get_user, list_user_ids, mark_user_blocked, set_banned
+from app.repositories.users import add_warning, clear_warnings, get_user, get_warnings, list_user_ids, mark_user_blocked, set_banned
 
 router = Router(name="management")
 
@@ -70,6 +70,51 @@ async def unban_command(message: Message) -> None:
         return
     await set_banned(user_id, False)
     await message.answer(f"User {user_id} has been unbanned.")
+
+
+@router.message(Command("warn"))
+async def warn_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    user_id = await _target_user_id(message)
+    if user_id is None:
+        await message.answer("Usage: /warn <user_id>")
+        return
+    if is_admin(user_id):
+        await message.answer("Configured admins cannot receive warnings.")
+        return
+    warnings = await add_warning(user_id)
+    if warnings >= 3:
+        await set_banned(user_id, True)
+        await message.answer(f"User {user_id} reached {warnings} warnings and was banned.")
+    else:
+        await message.answer(f"User {user_id} warned. Warnings: {warnings}/3.")
+
+
+@router.message(Command("warnings"))
+async def warnings_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    user_id = await _target_user_id(message)
+    if user_id is None:
+        await message.answer("Usage: /warnings <user_id>")
+        return
+    await message.answer(f"User {user_id} has {await get_warnings(user_id)} warning(s).")
+
+
+@router.message(Command("clearwarnings"))
+async def clear_warnings_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    user_id = await _target_user_id(message)
+    if user_id is None:
+        await message.answer("Usage: /clearwarnings <user_id>")
+        return
+    await clear_warnings(user_id)
+    await message.answer(f"Warnings cleared for user {user_id}.")
 
 
 @router.message(Command("user"))

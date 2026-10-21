@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from typing import Any
 
+from pymongo import ReturnDocument
+
 from app.database import get_database
 
 
@@ -40,3 +42,20 @@ async def set_banned(user_id: int, banned: bool) -> None:
 async def is_banned(user_id: int) -> bool:
     user = await get_database().users.find_one({"_id": user_id}, {"is_banned": 1})
     return bool(user and user.get("is_banned"))
+
+
+async def add_warning(user_id: int) -> int:
+    result = await get_database().users.find_one_and_update(
+        {"_id": user_id}, {"$inc": {"warnings": 1}},
+        upsert=True, return_document=ReturnDocument.AFTER,
+    )
+    return int(result.get("warnings", 1)) if result else 1
+
+
+async def get_warnings(user_id: int) -> int:
+    user = await get_database().users.find_one({"_id": user_id}, {"warnings": 1})
+    return int(user.get("warnings", 0)) if user else 0
+
+
+async def clear_warnings(user_id: int) -> None:
+    await get_database().users.update_one({"_id": user_id}, {"$set": {"warnings": 0}}, upsert=True)

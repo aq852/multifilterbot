@@ -85,5 +85,6 @@ async def help_command(message: Message) -> None:
             "/deletefile, /renamefile\n"
             "/stats, /broadcast, /ban, /unban\n"
             "/maintenance, /setcaption\n"
+            "/warn, /warnings, /clearwarnings\n"
         )
     await message.answer(text)
