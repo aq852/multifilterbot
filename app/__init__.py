@@ -1,0 +1,2 @@
+"""MultiFilterBot application package."""
+
