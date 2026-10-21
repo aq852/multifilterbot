@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -17,5 +18,5 @@ def file_document(*, chat_id: int, message_id: int, media_type: str, file_id: st
         "normalized_title": normalize_title(title),
         "search_terms": build_search_terms(title),
         "size": size,
+        "created_at": datetime.now(timezone.utc),
     }
-

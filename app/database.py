@@ -25,6 +25,8 @@ async def initialize_indexes() -> None:
     await db.payments.create_index("charge_id", unique=True)
     await db.reaction_rules.create_index("_id", unique=True)
     await db.search_sessions.create_index("expires_at", expireAfterSeconds=0)
+    await db.files.create_index("created_at")
+    await db.search_stats.create_index("count")
 
 
 async def close_database() -> None:
