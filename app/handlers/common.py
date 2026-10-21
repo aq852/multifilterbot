@@ -75,6 +75,8 @@ async def help_command(message: Message) -> None:
         "/clearsaved - remove all saved files\n"
         "/share <filename> - create a share link\n"
         "/request <filename> - request a missing file\n"
+        "/plans, /buy <plan> - Premium plans\n"
+        "/myplan, /paymenthistory - Premium status and payments\n"
         "/myrequests - view your open requests\n"
         "/cancelrequest <filename> - cancel your request\n"
     )

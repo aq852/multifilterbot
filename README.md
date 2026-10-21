@@ -62,6 +62,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Docker and Docker Compose setup
 - Production Docker healthcheck, non-root container user, VPS compose profile, and Koyeb deployment guide
 - GitHub Actions CI for tests, compilation, imports, and Docker builds
+- Premium status details, expiry warnings, and `/paymenthistory`
 
 ## Local setup
 

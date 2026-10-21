@@ -26,6 +26,9 @@ async def activate_premium(user_id: int, plan_id: str, days: int, charge_id: str
         {"$set": {"is_premium": True, "premium_until": expires_at}},
         upsert=True,
     )
+    await get_database().payments.update_one(
+        {"charge_id": charge_id}, {"$set": {"expires_at": expires_at}}
+    )
     return expires_at
 
 
@@ -36,3 +39,8 @@ async def premium_status(user_id: int) -> datetime | None:
         return None
     return expires_at
 
+
+async def payment_history(user_id: int, limit: int = 10) -> list[dict[str, Any]]:
+    return await get_database().payments.find(
+        {"user_id": user_id}, {"plan_id": 1, "charge_id": 1, "created_at": 1, "expires_at": 1}
+    ).sort("created_at", -1).limit(limit).to_list(length=limit)

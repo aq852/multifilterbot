@@ -1,8 +1,10 @@
+from datetime import datetime, timezone
+
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import LabeledPrice, Message, PreCheckoutQuery
 
-from app.repositories.premium import activate_premium, premium_status
+from app.repositories.premium import activate_premium, payment_history, premium_status
 from app.services.premium import PLANS, get_plan, payment_payload, plan_from_payload
 
 router = Router(name="payments")
@@ -42,7 +44,27 @@ async def my_plan_command(message: Message) -> None:
     if expires_at is None:
         await message.answer("You do not have an active Premium plan.")
         return
-    await message.answer(f"Your Premium plan is active until {expires_at:%Y-%m-%d %H:%M} UTC.")
+    remaining = max(1, (expires_at - datetime.now(timezone.utc)).days)
+    warning = "\n⚠️ Your plan expires soon." if remaining <= 3 else ""
+    await message.answer(f"Your Premium plan is active until {expires_at:%Y-%m-%d %H:%M} UTC.\nRemaining: {remaining} day(s).{warning}")
+
+
+@router.message(Command("paymenthistory"))
+async def payment_history_command(message: Message) -> None:
+    if message.from_user is None:
+        return
+    payments = await payment_history(message.from_user.id)
+    if not payments:
+        await message.answer("No Premium payments found.")
+        return
+    lines = []
+    for item in payments:
+        created = item.get("created_at")
+        date = created.strftime("%Y-%m-%d") if created else "unknown date"
+        expiry = item.get("expires_at")
+        expiry_text = expiry.strftime("%Y-%m-%d") if expiry else "pending"
+        lines.append(f"- {item.get('plan_id', 'premium')} on {date}; expires {expiry_text}")
+    await message.answer("Premium payment history:\n" + "\n".join(lines))
 
 
 @router.pre_checkout_query()
@@ -72,4 +94,3 @@ async def successful_payment(message: Message) -> None:
         await message.answer("This payment has already been processed.")
         return
     await message.answer(f"Premium activated until {expires_at:%Y-%m-%d %H:%M} UTC.")
-
