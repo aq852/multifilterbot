@@ -2,6 +2,9 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
+from app.repositories.files import get_file
+from app.services.deeplinks import build_file_payload
+
 router = Router(name="utility")
 
 
@@ -34,3 +37,21 @@ async def info_command(message: Message) -> None:
         return
     size_text = f"{size / 1024 / 1024:.2f} MB" if size else "unknown"
     await message.answer(f"Type: {media_type}\nName: {name or 'untitled'}\nSize: {size_text}")
+
+
+@router.message(Command("share"))
+async def share_command(message: Message) -> None:
+    target = message.reply_to_message
+    if target is None:
+        await message.answer("Reply to an indexed file with /share.")
+        return
+    file = await get_file(target.chat.id, target.message_id)
+    if file is None:
+        await message.answer("That message is not indexed yet.")
+        return
+    bot_user = await message.bot.get_me()
+    if not bot_user.username:
+        await message.answer("The bot username is not available for sharing.")
+        return
+    payload = build_file_payload(target.chat.id, target.message_id)
+    await message.answer(f"Share this file:\nhttps://t.me/{bot_user.username}?start={payload}")
