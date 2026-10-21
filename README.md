@@ -36,6 +36,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Admin title editing with `/renamefile <new title>` on reply, or `/renamefile <old filename> => <new title>`
 - Filename fallback for `/share`, with safe handling when multiple files match
 - `/info` supports replies and unique filename matches with indexed metadata
+- `/random` discovery command for a random indexed file
 - Docker and Docker Compose setup
 
 ## Local setup

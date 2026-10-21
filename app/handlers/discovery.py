@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from app.repositories.discovery import latest_files, popular_files, top_searches, user_search_history
+from app.repositories.discovery import latest_files, popular_files, random_file, top_searches, user_search_history
 from app.repositories.search_sessions import create_search_session
 from app.handlers.search import _results_markup
 
@@ -44,6 +44,19 @@ async def popular_command(message: Message) -> None:
         callback_data=f"file:{item['chat_id']}:{item['message_id']}",
     )] for index, item in enumerate(files, 1)]
     await message.answer("Most popular files:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+
+@router.message(Command("random"))
+async def random_command(message: Message) -> None:
+    item = await random_file()
+    if item is None:
+        await message.answer("No indexed files are available yet.")
+        return
+    title = item.get("title") or item.get("name", "untitled")
+    markup = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="📥 Get this file", callback_data=f"file:{item['chat_id']}:{item['message_id']}"),
+    ]])
+    await message.answer(f"Random pick:\n{title}", reply_markup=markup)
 
 
 @router.message(Command("history"))

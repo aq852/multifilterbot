@@ -57,3 +57,11 @@ async def popular_files(limit: int = 10) -> list[dict[str, Any]]:
         {"name": 1, "title": 1, "chat_id": 1, "message_id": 1, "downloads": 1},
     ).sort("downloads", -1).limit(limit)
     return await cursor.to_list(length=limit)
+
+
+async def random_file() -> dict[str, Any] | None:
+    results = await get_database().files.aggregate([
+        {"$sample": {"size": 1}},
+        {"$project": {"name": 1, "title": 1, "chat_id": 1, "message_id": 1, "media_type": 1}},
+    ]).to_list(length=1)
+    return results[0] if results else None
