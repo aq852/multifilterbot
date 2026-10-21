@@ -88,5 +88,6 @@ async def help_command(message: Message) -> None:
             "/warn, /warnings, /clearwarnings\n"
             "/autoreactall on <emoji>, /autoreactall off\n"
             "/autoreactignore <chat_id>\n"
+            "/welcome on/off\n"
         )
     await message.answer(text)

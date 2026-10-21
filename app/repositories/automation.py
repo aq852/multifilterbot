@@ -10,6 +10,17 @@ async def set_auto_approve(enabled: bool) -> None:
     )
 
 
+async def set_welcome(chat_id: int, enabled: bool) -> None:
+    await get_database().bot_settings.update_one(
+        {"_id": f"welcome:{chat_id}"}, {"$set": {"enabled": enabled}}, upsert=True
+    )
+
+
+async def welcome_enabled(chat_id: int) -> bool:
+    setting = await get_database().bot_settings.find_one({"_id": f"welcome:{chat_id}"})
+    return bool(setting and setting.get("enabled"))
+
+
 async def auto_approve_enabled() -> bool:
     setting = await get_database().bot_settings.find_one({"_id": "auto_approve"})
     return bool(setting and setting.get("enabled"))

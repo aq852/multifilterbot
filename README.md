@@ -45,6 +45,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Live `/admin` dashboard with database, catalog, subscription, and request status
 - Broadcast reports sent, failed, and blocked-user counts
 - Admin warning system with automatic ban after three warnings
+- Per-chat welcome messages with `/welcome on` and `/welcome off`
 - Moderation commands support replying to a user instead of manually entering an ID
 - Auto-reactions support up to five randomly selected emojis per channel
 - Global `/autoreactall` mode for chats where the bot is added and can receive/react to messages

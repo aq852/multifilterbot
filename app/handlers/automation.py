@@ -1,6 +1,6 @@
 import random
 
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.filters import Command
 from aiogram.types import ChatJoinRequest, Message, ReactionTypeEmoji
@@ -17,6 +17,8 @@ from app.repositories.automation import (
     set_auto_approve,
     set_global_reaction,
     set_reaction,
+    set_welcome,
+    welcome_enabled,
     remove_global_reaction_ignore,
 )
 
@@ -43,6 +45,20 @@ async def auto_approve_command(message: Message) -> None:
     enabled = parts[1].lower() == "on"
     await set_auto_approve(enabled)
     await message.answer(f"Automatic join-request approval {'enabled' if enabled else 'disabled'}.")
+
+
+@router.message(Command("welcome"))
+async def welcome_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2 or parts[1].lower() not in {"on", "off"}:
+        await message.answer("Usage: /welcome on or /welcome off")
+        return
+    enabled = parts[1].lower() == "on"
+    await set_welcome(message.chat.id, enabled)
+    await message.answer(f"Welcome messages {'enabled' if enabled else 'disabled'} for this chat.")
 
 
 @router.message(Command("autoreact"))
@@ -169,6 +185,14 @@ async def auto_reacts_command(message: Message) -> None:
 async def approve_join_request(request: ChatJoinRequest) -> None:
     if not await auto_approve_enabled():
         return
+
+
+@router.message(F.new_chat_members)
+async def welcome_new_members(message: Message) -> None:
+    if not await welcome_enabled(message.chat.id):
+        return
+    names = ", ".join(member.full_name for member in message.new_chat_members)
+    await message.answer(f"Welcome, {names}! Please read the group rules and enjoy your stay.")
     try:
         await request.bot.approve_chat_join_request(request.chat.id, request.from_user.id)
     except (TelegramBadRequest, TelegramForbiddenError):
