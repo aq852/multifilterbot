@@ -34,6 +34,8 @@ async def stats_command(message: Message) -> None:
 
 
 async def _target_user_id(message: Message) -> int | None:
+    if message.reply_to_message and message.reply_to_message.from_user:
+        return message.reply_to_message.from_user.id
     parts = (message.text or "").split(maxsplit=1)
     if len(parts) != 2:
         return None
