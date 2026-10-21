@@ -78,6 +78,7 @@ async def help_command(message: Message) -> None:
         "/ping - check bot and database status\n"
         "/profile - view your account summary\n"
         "/related <filename> - find similar files\n"
+        "/parts <filename> - group split-file parts\n"
         "/history - your recent searches\n"
         "/clearhistory - clear your search history\n\n"
         "Files & bookmarks:\n"

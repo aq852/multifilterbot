@@ -5,6 +5,7 @@ from app.database import get_database
 from app.services.metadata import extract_metadata
 from app.services.search import build_search_terms, normalize_title
 from app.services.search import parse_media_filter, parse_search_filters, search_pattern
+from app.services.split_parts import split_part_info
 
 
 async def save_file(document: dict[str, Any]) -> bool:
@@ -98,3 +99,27 @@ async def related_files(chat_id: int, message_id: int, limit: int = 10) -> list[
         {"name": 1, "title": 1, "chat_id": 1, "message_id": 1, "media_type": 1},
     ).sort("title", 1).limit(limit)
     return await cursor.to_list(length=limit)
+
+
+async def find_split_parts(file: dict[str, Any], limit: int = 100) -> list[dict[str, Any]]:
+    source_name = file.get("name") or file.get("title") or ""
+    parsed = split_part_info(source_name)
+    if parsed is None:
+        return []
+    base, _ = parsed
+    pattern = rf"^{re.escape(base)}(?:[._-](?:\d{{3}}|part\d+))$"
+    candidates = await get_database().files.find(
+        {"$or": [
+            {"name": {"$regex": pattern, "$options": "i"}},
+            {"title": {"$regex": pattern, "$options": "i"}},
+        ]},
+        {"name": 1, "title": 1, "chat_id": 1, "message_id": 1, "size": 1},
+    ).limit(limit).to_list(length=limit)
+    parts = []
+    for candidate in candidates:
+        candidate_name = candidate.get("name") or candidate.get("title") or ""
+        candidate_part = split_part_info(candidate_name)
+        if candidate_part and candidate_part[0].lower() == base.lower():
+            candidate["part_number"] = candidate_part[1]
+            parts.append(candidate)
+    return sorted(parts, key=lambda item: item["part_number"])

@@ -4,7 +4,8 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from app.repositories.files import find_files_by_name, get_file
+from app.repositories.files import find_files_by_name, find_split_parts, get_file
+from app.services.split_parts import split_part_info
 from app.database import ping_database
 from app.repositories.profile import get_profile
 from app.services.deeplinks import build_file_payload, build_link_payload
@@ -12,6 +13,37 @@ from app.repositories.share_links import create_expiring_link
 from app.services.telegram_links import parse_message_link, resolve_message_link
 
 router = Router(name="utility")
+
+
+@router.message(Command("parts"))
+async def parts_command(message: Message) -> None:
+    target = message.reply_to_message
+    file = await get_file(target.chat.id, target.message_id) if target else None
+    if file is None:
+        query = (message.text or "").split(maxsplit=1)
+        if len(query) != 2:
+            await message.answer("Reply to a split file or use /parts <filename>.")
+            return
+        matches = await find_files_by_name(query[1].strip(), limit=5)
+        if not matches:
+            await message.answer("No indexed file matched that filename.")
+            return
+        if len(matches) > 1:
+            await message.answer("Multiple files matched. Refine the filename or reply to the exact file.")
+            return
+        file = await get_file(matches[0]["chat_id"], matches[0]["message_id"])
+    if file is None or split_part_info(file.get("name") or file.get("title")) is None:
+        await message.answer("This file does not look like a split-file part.")
+        return
+    parts = await find_split_parts(file)
+    if not parts:
+        await message.answer("No related split-file parts were found in the index.")
+        return
+    lines = ["Split-file parts (ordered):"]
+    for item in parts:
+        name = item.get("name") or item.get("title") or "untitled"
+        lines.append(f"{item['part_number']:03d}. {name}")
+    await message.answer("\n".join(lines))
 
 
 @router.message(Command("profile"))

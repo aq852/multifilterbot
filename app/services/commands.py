@@ -12,6 +12,7 @@ USER_COMMANDS = [
     BotCommand(command="latest", description="Show recent files"),
     BotCommand(command="popular", description="Show popular files"),
     BotCommand(command="random", description="Pick a random file"),
+    BotCommand(command="parts", description="Find split-file parts"),
     BotCommand(command="saved", description="View saved files"),
     BotCommand(command="history", description="View search history"),
     BotCommand(command="plans", description="View Premium plans"),
