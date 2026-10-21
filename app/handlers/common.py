@@ -91,5 +91,7 @@ async def help_command(message: Message) -> None:
             "/welcome on/off\n"
             "/goodbye on/off\n"
             "/setwelcome, /setgoodbye\n"
+            "/antiflood, /linkfilter, /modsettings\n"
+            "/mute, /unmute\n"
         )
     await message.answer(text)

@@ -47,6 +47,20 @@ async def member_message_template(chat_id: int, kind: str) -> str | None:
     return setting.get("template") if setting else None
 
 
+async def set_moderation_setting(chat_id: int, key: str, enabled: bool) -> None:
+    await get_database().bot_settings.update_one(
+        {"_id": f"moderation:{chat_id}"}, {"$set": {key: enabled}}, upsert=True
+    )
+
+
+async def moderation_settings(chat_id: int) -> dict[str, bool]:
+    setting = await get_database().bot_settings.find_one({"_id": f"moderation:{chat_id}"})
+    return {
+        "antiflood": bool(setting and setting.get("antiflood")),
+        "link_filter": bool(setting and setting.get("link_filter")),
+    }
+
+
 async def auto_approve_enabled() -> bool:
     setting = await get_database().bot_settings.find_one({"_id": "auto_approve"})
     return bool(setting and setting.get("enabled"))

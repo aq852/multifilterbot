@@ -48,6 +48,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Per-chat welcome messages with `/welcome on` and `/welcome off`
 - Per-chat goodbye messages with `/goodbye on` and `/goodbye off`
 - Custom welcome/goodbye templates with `{name}` placeholder
+- Complete group moderation pack: anti-flood, link filter, mute/unmute, and `/modsettings`
 - Moderation commands support replying to a user instead of manually entering an ID
 - Auto-reactions support up to five randomly selected emojis per channel
 - Global `/autoreactall` mode for chats where the bot is added and can receive/react to messages
