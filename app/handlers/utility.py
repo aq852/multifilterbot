@@ -2,7 +2,7 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from app.repositories.files import get_file
+from app.repositories.files import find_files_by_name, get_file
 from app.services.deeplinks import build_file_payload
 
 router = Router(name="utility")
@@ -42,10 +42,23 @@ async def info_command(message: Message) -> None:
 @router.message(Command("share"))
 async def share_command(message: Message) -> None:
     target = message.reply_to_message
-    if target is None:
-        await message.answer("Reply to an indexed file with /share.")
-        return
-    file = await get_file(target.chat.id, target.message_id)
+    if target is not None:
+        chat_id, message_id = target.chat.id, target.message_id
+        file = await get_file(chat_id, message_id)
+    else:
+        parts = (message.text or "").split(maxsplit=1)
+        if len(parts) != 2 or not parts[1].strip():
+            await message.answer("Reply to an indexed file or use /share <filename>.")
+            return
+        matches = await find_files_by_name(parts[1].strip(), limit=5)
+        if not matches:
+            await message.answer("No indexed file matched that filename.")
+            return
+        if len(matches) > 1:
+            await message.answer("Multiple files matched. Refine the filename or reply to the exact file.")
+            return
+        file = matches[0]
+        chat_id, message_id = file["chat_id"], file["message_id"]
     if file is None:
         await message.answer("That message is not indexed yet.")
         return
@@ -53,5 +66,5 @@ async def share_command(message: Message) -> None:
     if not bot_user.username:
         await message.answer("The bot username is not available for sharing.")
         return
-    payload = build_file_payload(target.chat.id, target.message_id)
+    payload = build_file_payload(chat_id, message_id)
     await message.answer(f"Share this file:\nhttps://t.me/{bot_user.username}?start={payload}")

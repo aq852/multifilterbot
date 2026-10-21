@@ -167,11 +167,26 @@ async def rename_file_command(message: Message) -> None:
         return
     target = message.reply_to_message
     parts = (message.text or "").split(maxsplit=1)
-    if target is None or len(parts) != 2 or not parts[1].strip():
-        await message.answer("Reply to an indexed file with /renamefile <new title>.")
+    if len(parts) != 2 or not parts[1].strip():
+        await message.answer("Reply to a file: /renamefile <new title>\nBy filename: /renamefile <old filename> => <new title>")
         return
-    renamed = await rename_file(target.chat.id, target.message_id, parts[1])
-    await message.answer("File title updated and re-indexed." if renamed else "That file is not indexed.")
+    if target is not None:
+        renamed = await rename_file(target.chat.id, target.message_id, parts[1])
+        await message.answer("File title updated and re-indexed." if renamed else "That file is not indexed.")
+        return
+    if "=>" not in parts[1]:
+        await message.answer("For filename mode use: /renamefile <old filename> => <new title>")
+        return
+    filename, new_title = (value.strip() for value in parts[1].split("=>", 1))
+    matches = await find_files_by_name(filename, limit=5)
+    if not matches:
+        await message.answer("No indexed file matched that filename.")
+    elif len(matches) > 1:
+        await message.answer("Multiple files matched. Reply to the exact indexed file and use /renamefile <new title>.")
+    else:
+        item = matches[0]
+        renamed = await rename_file(item["chat_id"], item["message_id"], new_title)
+        await message.answer("File title updated and re-indexed." if renamed else "That file is not indexed.")
 
 
 @router.callback_query(F.data.startswith("admindelete:"))
