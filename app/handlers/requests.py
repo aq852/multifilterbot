@@ -4,7 +4,7 @@ from aiogram.types import Message
 
 from app.access import is_admin
 from app.config import settings
-from app.repositories.requests import cancel_user_request, close_request, create_request, open_requests, user_open_requests
+from app.repositories.requests import cancel_user_request, close_request, create_request, get_request, open_requests, user_open_requests
 
 router = Router(name="requests")
 
@@ -78,3 +78,13 @@ async def close_request_command(message: Message) -> None:
         return
     closed = await close_request(parts[1].strip(), message.from_user.id)
     await message.answer("Request closed." if closed else "Open request not found.")
+    if closed:
+        request = await get_request(parts[1].strip())
+        if request:
+            try:
+                await message.bot.send_message(
+                    request["user_id"],
+                    f"Your file request has been closed:\n{request['query']}",
+                )
+            except Exception:
+                pass

@@ -40,3 +40,7 @@ async def close_request(request_id: str, closed_by: int) -> bool:
         {"$set": {"status": "closed", "closed_by": closed_by, "closed_at": datetime.now(timezone.utc)}},
     )
     return result.modified_count == 1
+
+
+async def get_request(request_id: str) -> dict | None:
+    return await get_database().file_requests.find_one({"_id": request_id})
