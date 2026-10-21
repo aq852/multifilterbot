@@ -8,7 +8,8 @@ from app.repositories.users import get_user
 from app.services.referrals import parse_referrer
 from app.repositories.files import get_file
 from app.repositories.discovery import record_file_delivery
-from app.services.deeplinks import parse_file_payload
+from app.services.deeplinks import parse_file_payload, parse_link_payload
+from app.repositories.share_links import get_active_link
 from app.services.subscription import missing_subscriptions, subscription_keyboard
 from app.access import is_admin
 
@@ -38,6 +39,14 @@ async def start(message: Message) -> None:
         "The bot is ready. Use /search <name> to search indexed files."
     )
     target = parse_file_payload(payload)
+    if target is None:
+        link_token = parse_link_payload(payload)
+        if link_token:
+            link = await get_active_link(link_token)
+            if link is None:
+                await message.answer("This temporary link has expired or is invalid.")
+                return
+            target = (link["chat_id"], link["message_id"])
     if target and message.from_user:
         chat_id, message_id = target
         if await get_file(chat_id, message_id) is None:
@@ -77,6 +86,7 @@ async def help_command(message: Message) -> None:
         "/unsave <filename> - remove one saved file\n"
         "/clearsaved - remove all saved files\n"
         "/share <filename> - create a share link\n"
+        "/link <filename> - create a 24-hour protected link\n"
         "/request <filename> - request a missing file\n"
         "/plans, /buy <plan> - Premium plans\n"
         "/myplan, /paymenthistory - Premium status and payments\n"

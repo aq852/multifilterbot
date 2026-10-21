@@ -17,6 +17,7 @@ USER_COMMANDS = [
     BotCommand(command="plans", description="View Premium plans"),
     BotCommand(command="myplan", description="View Premium status"),
     BotCommand(command="request", description="Request a missing file"),
+    BotCommand(command="link", description="Create a temporary file link"),
     BotCommand(command="ping", description="Check bot status"),
 ]
 

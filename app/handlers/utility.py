@@ -7,7 +7,8 @@ from aiogram.types import Message
 from app.repositories.files import find_files_by_name, get_file
 from app.database import ping_database
 from app.repositories.profile import get_profile
-from app.services.deeplinks import build_file_payload
+from app.services.deeplinks import build_file_payload, build_link_payload
+from app.repositories.share_links import create_expiring_link
 
 router = Router(name="utility")
 
@@ -134,3 +135,37 @@ async def share_command(message: Message) -> None:
         return
     payload = build_file_payload(chat_id, message_id)
     await message.answer(f"Share this file:\nhttps://t.me/{bot_user.username}?start={payload}")
+
+
+@router.message(Command("link"))
+async def expiring_link_command(message: Message) -> None:
+    if message.from_user is None:
+        return
+    target = message.reply_to_message
+    if target is not None:
+        file = await get_file(target.chat.id, target.message_id)
+    else:
+        parts = (message.text or "").split(maxsplit=1)
+        if len(parts) != 2 or not parts[1].strip():
+            await message.answer("Reply to an indexed file or use /link <filename>.")
+            return
+        matches = await find_files_by_name(parts[1].strip(), limit=5)
+        if not matches:
+            await message.answer("No indexed file matched that filename.")
+            return
+        if len(matches) > 1:
+            await message.answer("Multiple files matched. Refine the filename or reply to the exact file.")
+            return
+        file = matches[0]
+    if file is None:
+        await message.answer("That message is not indexed yet.")
+        return
+    bot_user = await message.bot.get_me()
+    if not bot_user.username:
+        await message.answer("The bot username is not available for sharing.")
+        return
+    token = await create_expiring_link(file["chat_id"], file["message_id"], message.from_user.id)
+    await message.answer(
+        "Temporary link (valid for 24 hours):\n"
+        f"https://t.me/{bot_user.username}?start={build_link_payload(token)}"
+    )

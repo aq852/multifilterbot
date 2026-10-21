@@ -71,6 +71,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Admin audit log for commands and settings callbacks, available through `/audit`
 - Scoped Telegram command menus for users and admins, plus `/ping` diagnostics
 - User profile dashboard with Premium, bookmarks, requests, and search-history summary
+- Temporary protected file links through `/link`, backed by expiring MongoDB tokens
 
 ## Local setup
 
