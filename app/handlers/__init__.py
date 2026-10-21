@@ -10,5 +10,6 @@ from app.handlers.utility import router as utility_router
 from app.handlers.payments import router as payments_router
 from app.handlers.redeem import router as redeem_router
 from app.handlers.referrals import router as referrals_router
+from app.handlers.requests import router as requests_router
 
-__all__ = ["admin_router", "automation_router", "common_router", "discovery_router", "indexing_router", "management_router", "payments_router", "redeem_router", "referrals_router", "search_router", "settings_router", "utility_router"]
+__all__ = ["admin_router", "automation_router", "common_router", "discovery_router", "indexing_router", "management_router", "payments_router", "redeem_router", "referrals_router", "requests_router", "search_router", "settings_router", "utility_router"]

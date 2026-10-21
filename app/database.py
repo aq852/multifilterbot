@@ -27,6 +27,7 @@ async def initialize_indexes() -> None:
     await db.search_sessions.create_index("expires_at", expireAfterSeconds=0)
     await db.files.create_index("created_at")
     await db.search_stats.create_index("count")
+    await db.file_requests.create_index([("status", 1), ("created_at", 1)])
 
 
 async def close_database() -> None:
