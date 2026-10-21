@@ -4,7 +4,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 
 from app.repositories.files import count_search_files, get_file, search_files
 from app.repositories.search_sessions import create_search_session, get_search_session
-from app.repositories.discovery import record_search
+from app.repositories.discovery import record_search, record_user_search
 from app.services.search import parse_media_filter, parse_search_filters
 from app.services.subscription import missing_subscriptions, subscription_keyboard
 from app.services.captions import render_caption
@@ -71,6 +71,7 @@ async def search_command(message: Message) -> None:
         return
     query = parts[1].strip()
     await record_search(query)
+    await record_user_search(message.from_user.id, query)
     token = await create_search_session(message.from_user.id, query)
     text, markup = await _results_markup(query, token, 0)
     await message.answer(text, reply_markup=markup)
