@@ -17,6 +17,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - Admin `/stats` reporting and paced reply-based `/broadcast`
 - Configurable automatic join-request approval and channel reactions
 - Referral links with Premium rewards via `/refer`
+- Admin `/ban`, `/unban`, and `/user` controls with global ban enforcement
 - Docker and Docker Compose setup
 
 ## Local setup

@@ -7,7 +7,7 @@ from aiogram.types import Message
 
 from app.access import is_admin
 from app.repositories.stats import get_stats
-from app.repositories.users import list_user_ids, mark_user_blocked
+from app.repositories.users import get_user, list_user_ids, mark_user_blocked, set_banned
 
 router = Router(name="management")
 
@@ -28,6 +28,66 @@ async def stats_command(message: Message) -> None:
         f"Indexed files: {stats['files']}\n"
         f"Configured channels: {stats['channels']}\n"
         f"Active Premium users: {stats['premium']}"
+    )
+
+
+async def _target_user_id(message: Message) -> int | None:
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2:
+        return None
+    try:
+        return int(parts[1])
+    except ValueError:
+        return None
+
+
+@router.message(Command("ban"))
+async def ban_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    user_id = await _target_user_id(message)
+    if user_id is None:
+        await message.answer("Usage: /ban <user_id>")
+        return
+    if is_admin(user_id):
+        await message.answer("Configured admins cannot be banned.")
+        return
+    await set_banned(user_id, True)
+    await message.answer(f"User {user_id} has been banned.")
+
+
+@router.message(Command("unban"))
+async def unban_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    user_id = await _target_user_id(message)
+    if user_id is None:
+        await message.answer("Usage: /unban <user_id>")
+        return
+    await set_banned(user_id, False)
+    await message.answer(f"User {user_id} has been unbanned.")
+
+
+@router.message(Command("user"))
+async def user_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    user_id = await _target_user_id(message)
+    if user_id is None:
+        await message.answer("Usage: /user <user_id>")
+        return
+    user = await get_user(user_id)
+    if user is None:
+        await message.answer("User not found.")
+        return
+    await message.answer(
+        f"User: {user_id}\n"
+        f"Username: @{user.get('username') or '-'}\n"
+        f"Premium: {'yes' if user.get('is_premium') else 'no'}\n"
+        f"Banned: {'yes' if user.get('is_banned') else 'no'}"
     )
 
 
@@ -54,4 +114,3 @@ async def broadcast_command(message: Message) -> None:
             await mark_user_blocked(user_id)
         await asyncio.sleep(0.05)
     await message.answer(f"Broadcast complete. Sent: {sent}; failed: {failed}.")
-
