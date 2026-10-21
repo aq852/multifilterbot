@@ -9,6 +9,7 @@ from app.database import ping_database
 from app.repositories.profile import get_profile
 from app.services.deeplinks import build_file_payload, build_link_payload
 from app.repositories.share_links import create_expiring_link
+from app.services.telegram_links import parse_message_link, resolve_message_link
 
 router = Router(name="utility")
 
@@ -62,14 +63,19 @@ async def info_command(message: Message) -> None:
     else:
         parts = (message.text or "").split(maxsplit=1)
         if len(parts) == 2 and parts[1].strip():
-            matches = await find_files_by_name(parts[1].strip(), limit=5)
-            if not matches:
-                await message.answer("No indexed file matched that filename.")
-                return
-            if len(matches) > 1:
-                await message.answer("Multiple files matched. Refine the filename or reply to the exact file.")
-                return
-            indexed_file = await get_file(matches[0]["chat_id"], matches[0]["message_id"])
+            query = parts[1].strip()
+            if parse_message_link(query):
+                target = await resolve_message_link(message.bot, query)
+                indexed_file = await get_file(*target) if target else None
+            else:
+                matches = await find_files_by_name(query, limit=5)
+                if not matches:
+                    await message.answer("No indexed file matched that filename.")
+                    return
+                if len(matches) > 1:
+                    await message.answer("Multiple files matched. Refine the filename or reply to the exact file.")
+                    return
+                indexed_file = await get_file(matches[0]["chat_id"], matches[0]["message_id"])
         else:
             await message.answer("Reply to a media file or use /info <filename>.")
             return
@@ -149,14 +155,19 @@ async def expiring_link_command(message: Message) -> None:
         if len(parts) != 2 or not parts[1].strip():
             await message.answer("Reply to an indexed file or use /link <filename>.")
             return
-        matches = await find_files_by_name(parts[1].strip(), limit=5)
-        if not matches:
-            await message.answer("No indexed file matched that filename.")
-            return
-        if len(matches) > 1:
-            await message.answer("Multiple files matched. Refine the filename or reply to the exact file.")
-            return
-        file = matches[0]
+        query = parts[1].strip()
+        if parse_message_link(query):
+            target = await resolve_message_link(message.bot, query)
+            file = await get_file(*target) if target else None
+        else:
+            matches = await find_files_by_name(query, limit=5)
+            if not matches:
+                await message.answer("No indexed file matched that filename.")
+                return
+            if len(matches) > 1:
+                await message.answer("Multiple files matched. Refine the filename or reply to the exact file.")
+                return
+            file = matches[0]
     if file is None:
         await message.answer("That message is not indexed yet.")
         return
