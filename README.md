@@ -13,6 +13,7 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - clickable search results with protected file delivery
 - force-subscription channel management with `/addfsub`, `/removefsub`, and `/fsub`
 - Premium plans, Telegram Stars checkout, and `/myplan`
+- Admin redeem-code creation and user Premium code redemption
 - Docker and Docker Compose setup
 
 ## Local setup

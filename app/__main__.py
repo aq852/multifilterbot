@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher
 
 from app.config import settings
 from app.database import close_database, connect_database
-from app.handlers import admin_router, common_router, indexing_router, payments_router, search_router
+from app.handlers import admin_router, common_router, indexing_router, payments_router, redeem_router, search_router
 from app.health import run_health_server
 
 
@@ -22,7 +22,7 @@ async def main() -> None:
     await connect_database()
     bot = Bot(settings.bot_token)
     dispatcher = Dispatcher()
-    dispatcher.include_routers(common_router, admin_router, indexing_router, search_router, payments_router)
+    dispatcher.include_routers(common_router, admin_router, indexing_router, search_router, payments_router, redeem_router)
 
     try:
         await asyncio.gather(
