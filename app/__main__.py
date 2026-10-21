@@ -8,6 +8,7 @@ from app.database import close_database, connect_database
 from app.handlers import admin_router, automation_router, common_router, discovery_router, indexing_router, management_router, payments_router, redeem_router, referrals_router, requests_router, saved_router, search_router, settings_router, utility_router
 from app.health import run_health_server
 from app.middlewares.ban import BanMiddleware
+from app.middlewares.errors import ErrorMiddleware
 from app.middlewares.maintenance import MaintenanceMiddleware
 from app.middlewares.rate_limit import RateLimitMiddleware
 
@@ -26,6 +27,9 @@ async def main() -> None:
     bot = Bot(settings.bot_token)
     dispatcher = Dispatcher()
     rate_limiter = RateLimitMiddleware()
+    error_middleware = ErrorMiddleware()
+    dispatcher.message.middleware(error_middleware)
+    dispatcher.callback_query.middleware(error_middleware)
     dispatcher.message.middleware(BanMiddleware())
     dispatcher.callback_query.middleware(BanMiddleware())
     dispatcher.message.middleware(MaintenanceMiddleware())
