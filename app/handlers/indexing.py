@@ -6,6 +6,7 @@ from app.access import is_admin
 from app.models import file_document
 from app.repositories.channels import add_channel, is_indexed_channel, list_channels, remove_channel
 from app.repositories.files import save_file
+from app.repositories.subscriptions import add_required_channel, list_required_channels, remove_required_channel
 
 router = Router(name="indexing")
 
@@ -61,7 +62,58 @@ async def channels_command(message: Message) -> None:
         await message.answer("No indexing channels configured.")
         return
     await message.answer("Configured channels:\n" + "\n".join(
-        f"• {channel['title']} ({channel['_id']})" for channel in channels
+        f"- {channel['title']} ({channel['_id']})" for channel in channels
+    ))
+
+
+@router.message(Command("addfsub"))
+async def add_force_sub_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    parts = (message.text or "").split(maxsplit=3)
+    if len(parts) < 3:
+        await message.answer("Usage: /addfsub <chat_id> <invite_url> [display name]")
+        return
+    try:
+        chat_id = int(parts[1])
+    except ValueError:
+        await message.answer("The chat ID must be a number.")
+        return
+    title = parts[3] if len(parts) == 4 else str(chat_id)
+    await add_required_channel(chat_id, title, parts[2], message.from_user.id)
+    await message.answer(f"Force subscription enabled for {title}.")
+
+
+@router.message(Command("removefsub"))
+async def remove_force_sub_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2:
+        await message.answer("Usage: /removefsub <chat_id>")
+        return
+    try:
+        chat_id = int(parts[1])
+    except ValueError:
+        await message.answer("The chat ID must be a number.")
+        return
+    removed = await remove_required_channel(chat_id)
+    await message.answer("Force subscription removed." if removed else "Channel was not configured.")
+
+
+@router.message(Command("fsub"))
+async def force_sub_list_command(message: Message) -> None:
+    if not _admin(message):
+        await message.answer("You are not authorized to use this command.")
+        return
+    channels = await list_required_channels()
+    if not channels:
+        await message.answer("No force-subscription channels configured.")
+        return
+    await message.answer("Force-subscription channels:\n" + "\n".join(
+        f"- {channel['title']} ({channel['_id']})" for channel in channels
     ))
 
 
@@ -87,4 +139,3 @@ async def _index_message(message: Message) -> None:
 @router.channel_post()
 async def index_channel_post(message: Message) -> None:
     await _index_message(message)
-

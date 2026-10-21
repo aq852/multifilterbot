@@ -10,6 +10,8 @@ Modular Telegram media filtering and management bot built with Python, aiogram, 
 - `/addchannel`, `/removechannel`, and `/channels` admin commands
 - automatic indexing of documents, videos, audio, and photos posted to configured channels
 - normalized title search through `/search <query>`
+- clickable search results with protected file delivery
+- force-subscription channel management with `/addfsub`, `/removefsub`, and `/fsub`
 - Docker and Docker Compose setup
 
 ## Local setup
@@ -22,4 +24,3 @@ The health endpoint is available at `http://localhost:8080/health`.
 
 Only index and distribute media that you are authorized to access and share. Never commit tokens,
 session strings, database credentials, or other secrets.
-

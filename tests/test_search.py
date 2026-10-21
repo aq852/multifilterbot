@@ -1,6 +1,7 @@
 import unittest
 
 from app.services.search import build_search_terms, normalize_title, search_pattern
+from app.handlers.search import _file_target
 
 
 class SearchTests(unittest.TestCase):
@@ -12,3 +13,7 @@ class SearchTests(unittest.TestCase):
 
     def test_search_pattern_escapes_regex_characters(self) -> None:
         self.assertEqual(search_pattern("A+B"), r"a\ b")
+
+    def test_file_callback_target(self) -> None:
+        self.assertEqual(_file_target("file:-100123:77"), (-100123, 77))
+        self.assertIsNone(_file_target("file:not-a-chat:77"))

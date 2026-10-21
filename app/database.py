@@ -21,6 +21,7 @@ async def initialize_indexes() -> None:
     await db.files.create_index([("chat_id", 1), ("message_id", 1)], unique=True)
     await db.files.create_index("normalized_title")
     await db.files.create_index("search_terms")
+    await db.force_sub.create_index("title")
 
 
 async def close_database() -> None:
